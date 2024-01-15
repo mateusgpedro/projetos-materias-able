@@ -38,7 +38,7 @@ public class SkuController : ControllerBase
         return Ok($"{request.Name} foi adicionado à lista de Skus");
     }
 
-    [HttpGet("get_all_skus")]
+    [HttpGet("get_skus")]
     public async Task<ActionResult<List<SkuDto>>> GetAllSkus()
     {
         var skus = await _dbContext.Skus.Select(s => new SkuDto(s.Code, s.Name, s.Description)).ToListAsync();

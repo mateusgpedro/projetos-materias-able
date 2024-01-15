@@ -1,6 +1,8 @@
+using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjetoMateriasAble.Infra;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Models;
@@ -44,17 +46,96 @@ public class AuthController : ControllerBase
     }
     
     [AllowAnonymous]
-    [HttpGet("login")]
+    [HttpPost("login")]
     public async Task<ActionResult> LoginUser(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
 
         if (user == null)
             return BadRequest("There was no user found with this email");
-        if (!_userManager.CheckPasswordAsync(user, request.Password).Result)
+        
+        if (!await _userManager.CheckPasswordAsync(user, request.Password))
             return BadRequest("Password Invalid");
-
-        var token = await _authenticationService.CreateTokenAsync(request.Email, user);
+        
+        var token = await _authenticationService.CreateTokenAsync(user);
+        
+        if (request.RememberMe)
+        {
+            var refreshTokenResponse = await _authenticationService.GenerateRefreshToken(user);
+            if (!refreshTokenResponse.isSuccess)
+                return BadRequest(refreshTokenResponse.Errors);
+            
+            Response.Cookies.Append("refreshToken", refreshTokenResponse.data, new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddDays(60),
+                SameSite = SameSiteMode.None,
+                HttpOnly = true,
+                Secure = true
+            });
+        }
+        
         return Ok(token.data);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken()
+    {
+        var refreshToken = HttpContext.Request.Cookies["refreshToken"];
+        
+        if (refreshToken == null)
+            return BadRequest("There were no refresh tokens found");
+        
+        var userResponse = await _authenticationService.GetUserByRefreshTokenAsync(refreshToken);
+        if (!userResponse.isSuccess)
+            return BadRequest(userResponse.Errors);
+        
+        var token = await _authenticationService.CreateTokenAsync(userResponse.data);
+        
+        return Ok(token.data);
+    }
+    
+    [HttpPost("logout")]
+    public async Task<ActionResult> LogoutUser()
+    {
+        var refreshTokenValue = Request.Cookies["refreshToken"];
+        if (refreshTokenValue != null)
+        {
+            Response.Cookies.Append("refreshToken", refreshTokenValue, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                SameSite = SameSiteMode.None,
+                HttpOnly = true,
+                Secure = true
+            });
+        }
+
+        var refreshToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == refreshTokenValue);
+        if (refreshToken != null)
+        {
+            _dbContext.RefreshTokens.Remove(refreshToken);
+            await _dbContext.SaveChangesAsync();
+        }
+        
+        return Ok();
+    }
+    
+    [AllowAnonymous]
+    [HttpPost("validate-jwt")]
+    public async Task<ActionResult> ValidateTokenAsync([FromHeader] string? authorization)
+    {
+        if (authorization == null)
+        {
+            return Unauthorized(new { message = "No token provided" });
+        }
+        
+        var result = await _authenticationService.ValidateTokenAsync(authorization);
+
+        if (!result.data)
+        {
+            return Unauthorized(result.Errors);
+        }
+        
+        return Ok();
     }
 }

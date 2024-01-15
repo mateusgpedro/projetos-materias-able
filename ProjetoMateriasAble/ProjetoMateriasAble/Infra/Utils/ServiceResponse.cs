@@ -6,5 +6,6 @@ public class ServiceResponse<T>
 
     public bool isSuccess = false;
 
-    public List<String>? Errors;
+    public List<String>? Errors = new();
+    
 }

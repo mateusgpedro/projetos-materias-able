@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjetoMateriasAble.Infra.User;
+using ProjetoMateriasAble.Models.Authentication;
 using ProjetoMateriasAble.Models.Platform;
 
 namespace ProjetoMateriasAble.Infra;
@@ -79,10 +81,16 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
             po.Property(po => po.Id)
                 .ValueGeneratedOnAdd();
         });
+
+        builder.Entity<RefreshToken>(rt =>
+        {
+            rt.HasKey(rt => rt.Id);
+        });
         
         base.OnModelCreating(builder);
     }
 
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Material> Materials { get; set; }
     public DbSet<WarehouseSlot> WarehouseSlots { get; set; }
     public DbSet<Sku> Skus { get; set; }

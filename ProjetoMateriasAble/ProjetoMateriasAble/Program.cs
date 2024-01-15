@@ -29,7 +29,13 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.SignIn.RequireConfirmedEmail = false;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddErrorDescriber<IdentityErrorDescriber>();
+    .AddErrorDescriber<IdentityErrorDescriber>()
+    .AddTokenProvider("Custom", typeof(DataProtectorTokenProvider<AppUser>));
+
+builder.Services.Configure<DataProtectionTokenProviderOptions>(op =>
+{
+    op.TokenLifespan = TimeSpan.FromDays(0.001);
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -41,7 +47,6 @@ builder.Services.AddAuthentication(options =>
     {
         RequireExpirationTime = false,
         ValidateIssuer = true,
-        ValidateActor = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
@@ -58,6 +63,17 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
 });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy",
+        builder => builder.WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
+
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -77,6 +93,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("CorsPolicy");
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
