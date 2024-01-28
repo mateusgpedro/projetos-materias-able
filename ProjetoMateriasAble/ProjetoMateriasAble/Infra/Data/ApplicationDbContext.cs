@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Models.Authentication;
+using ProjetoMateriasAble.Models.JoinTables;
 using ProjetoMateriasAble.Models.Platform;
 
 namespace ProjetoMateriasAble.Infra;
@@ -37,7 +38,7 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
             s.HasOne(s => s.Recipe)
                 .WithOne(r => r.Sku)
                 .HasForeignKey<Sku>(s => s.RecipeId)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<Warehouse>(w =>
@@ -86,10 +87,30 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
         {
             rt.HasKey(rt => rt.Id);
         });
+
+        builder.Entity<LinhaDeEnchimento>(le =>
+        {
+            le.HasKey(le => le.Id);
+        });
+
+        builder.Entity<SkuLinhaEnchimento>(sle =>
+        {
+            sle.HasKey(sle => new { sle.SkuId, sle.LinhaDeEnchimentoId});
+            
+            sle.HasOne(sle => sle.Sku)
+                .WithMany(s => s.SkusLinhasDeEnchimento)
+                .HasForeignKey(sle => sle.SkuId);
+
+            sle.HasOne(sle => sle.LinhaDeEnchimento)
+                .WithMany(le => le.SkusLinhasDeEnchimento)
+                .HasForeignKey(sle => sle.LinhaDeEnchimentoId);
+        });
         
         base.OnModelCreating(builder);
     }
 
+    public DbSet<SkuLinhaEnchimento>SkusLinhasDeEnchimento { get; set; }
+    public DbSet<LinhaDeEnchimento> LinhasDeEnchimento { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Material> Materials { get; set; }
     public DbSet<WarehouseSlot> WarehouseSlots { get; set; }

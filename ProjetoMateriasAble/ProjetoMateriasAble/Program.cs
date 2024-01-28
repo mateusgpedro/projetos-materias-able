@@ -8,6 +8,7 @@ using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Services;
 using ProjetoMateriasAble.Services.Materials;
 using ProjetoMateriasAble.Services.Production;
+using ProjetoMateriasAble.Services.Recipes;
 using ProjetoMateriasAble.Services.Sku;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -84,6 +85,7 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ISkuService, SkuService>();
 builder.Services.AddScoped<IProductionService, ProductionService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
 
 var app = builder.Build();
 

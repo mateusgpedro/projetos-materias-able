@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  CircularProgress,
   CssBaseline,
   CssVarsProvider,
   FormControl,
@@ -17,10 +18,42 @@ import Filters from "../components/Filter";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import SelectMultiple from "../components/SelectMultiple";
 import SkuTable from "../components/Skus/SkuTable";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import axiosInstance from "../utils/axiosInstance";
+import Pagination from "../components/Skus/Pagination";
 
 function SkusPage({ setIsLoggedIn }) {
-  useEffect(() => {});
+  const [isVeryfing, setIsVeryfing] = useState(true);
+  const [skus, setSkus] = useState();
+  const [pageCount, setPageCount] = useState();
+
+  async function handleFetchSkus(name, idLinha, page, pageSize) {
+    try {
+      const response = await axiosInstance.get(
+        `/sku/get_skus?name=${name}&idLinha=${idLinha}&page=${page}&pageSize=${pageSize}`
+      );
+
+      const skusArray = Array.isArray(response.data.skuList)
+        ? response.data.skuList
+        : [response.data.skuList];
+
+      setSkus(skusArray);
+      console.log("Skus state updated:", skusArray);
+
+      setPageCount(response.data.pagesCount);
+    } catch (error) {
+      console.error("Error fetching skus:", error);
+    }
+  }
+
+  useEffect(() => {
+    const getSkus = async () => {
+      await handleFetchSkus("", "", 1, 16);
+      setIsVeryfing(false);
+    };
+
+    getSkus();
+  }, []);
 
   const path = [
     <Link key="dashboard" href="/dashboard" color="neutral">
@@ -80,7 +113,7 @@ function SkusPage({ setIsLoggedIn }) {
               py: 3.5,
             }}
           >
-            <Header linkItems={path}></Header>
+            <Header linkItems={path} />
             <Box
               sx={{
                 width: "100%",
@@ -100,19 +133,24 @@ function SkusPage({ setIsLoggedIn }) {
               >
                 SKU's
               </Typography>
-              <Button
-                size="sm"
-                color="primary"
-                sx={{
-                  px: 4,
-                  alignSelf: "flex-end",
-                }}
-              >
-                Criar SKU
-              </Button>
             </Box>
             <Filters items={filters} />
-            <SkuTable />
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: "column",
+              }}
+            >
+              {isVeryfing ? (
+                <Sheet sx={{ margin: "auto" }}>
+                  <CircularProgress />
+                </Sheet>
+              ) : (
+                <SkuTable skus={skus} />
+              )}
+              <Pagination fetchSkus={handleFetchSkus} totalPages={pageCount} />
+            </Box>
           </Box>
         </CssBaseline>
       </CssVarsProvider>

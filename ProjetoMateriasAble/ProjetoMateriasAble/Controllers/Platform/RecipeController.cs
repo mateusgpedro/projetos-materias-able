@@ -25,10 +25,6 @@ public class RecipeController : ControllerBase
     [HttpPost("create_recipe")]
     public async Task<ActionResult> CreateRecipe(CreateRecipeRequest request)
     {
-        // var existingRecipe = await _dbContext.Recipes.FirstOrDefaultAsync(r => r.SkuId == request.SkuId);
-        // if (existingRecipe == null)
-        
-        
         var sku = await _dbContext.Skus.Include(s => s.Recipe)
             .FirstOrDefaultAsync(s => s.Id == request.SkuId);
         if (sku == null)
@@ -111,7 +107,7 @@ public class RecipeController : ControllerBase
         return Ok(recipeDtos);
     }
 
-    [HttpDelete("remove_recipe")]
+    /*[HttpDelete("remove_recipe")]
     public async Task<ActionResult> RemoveRecipe([FromQuery] int skuId)
     {
         var sku = await _dbContext.Skus.Include(s => s.Recipe).FirstOrDefaultAsync(s => s.Id == skuId);
@@ -133,5 +129,5 @@ public class RecipeController : ControllerBase
         sku.RecipeId = null;
         await _dbContext.SaveChangesAsync();
         return Ok();
-    }
+    }*/
 }

@@ -1,8 +1,11 @@
+using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjetoMateriasAble.DTOs;
 using ProjetoMateriasAble.Infra;
 using ProjetoMateriasAble.Models.Platform;
+using ProjetoMateriasAble.Services.Recipes;
+using ProjetoMateriasAble.Utils;
 
 namespace ProjetoMateriasAble.Controllers.Platform;
 
@@ -11,39 +14,80 @@ namespace ProjetoMateriasAble.Controllers.Platform;
 public class SkuController : ControllerBase
 {
     private ApplicationDbContext _dbContext;
+    private IRecipeService _recipeService;
 
-    public SkuController(ApplicationDbContext dbContext)
+    public SkuController(ApplicationDbContext dbContext, IRecipeService recipeService)
     {
         _dbContext = dbContext;
+        _recipeService = recipeService;
     }
 
     [HttpPost("add_sku")]
     public async Task<ActionResult<string>> AddSku(NewSkuRequest request)
     {
-        var sku = await _dbContext.Skus.FirstOrDefaultAsync(s => s.Code == request.Code);
-
-        if (sku != null)
-            return BadRequest($"Já existe um sku com o código \"{request.Code}\" na lista de Skus");
-        
-        var newSku = new Sku
+        using (var transaction = await _dbContext.Database.BeginTransactionAsync())
         {
-            Code = request.Code,
-            Name = request.Name,
-            Description = request.Description,
-            RecipeId = null
-        };
+            try
+            {
+                var sku = await _dbContext.Skus.FirstOrDefaultAsync(s => s.Code == request.Code);
 
-        await _dbContext.Skus.AddAsync(newSku);
-        await _dbContext.SaveChangesAsync();
-        return Ok($"{request.Name} foi adicionado à lista de Skus");
+                if (sku != null)
+                    return BadRequest($"Já existe um sku com o código \"{request.Code}\" na lista de Skus");
+        
+                var newSku = new Sku
+                {
+                    Code = request.Code,
+                    Name = request.Name,
+                    Description = $"{request.Code} -{request.Name}",
+                };
+                var createResponse = await _recipeService.CreateSkuAsync(newSku.Id, request.MaterialsData);
+                if (!createResponse.isSuccess)
+                    return BadRequest(createResponse.Errors);
+        
+                newSku.Recipe = createResponse.data;
+                newSku.RecipeId = createResponse.data.Id;
+        
+                await _dbContext.Skus.AddAsync(newSku);
+                await _dbContext.Recipes.AddAsync(createResponse.data);
+                
+                await _dbContext.SaveChangesAsync();
+                
+                transaction.Commit();
+                
+                return Ok($"{request.Name} foi adicionado à lista de Skus");
+            }
+            catch (Exception e)
+            {
+                transaction.Rollback();
+                return StatusCode(500, $"Erro interno: {e.Message}");
+            }
+        }
     }
 
     [HttpGet("get_skus")]
-    public async Task<ActionResult<List<SkuDto>>> GetAllSkus()
+    public async Task<ActionResult<SkuListDTO>> GetAllSkus([FromQuery] string? name, [FromQuery] uint? idLinha, [FromQuery] int page, [FromQuery] int pageSize)
     {
-        var skus = await _dbContext.Skus.Select(s => new SkuDto(s.Code, s.Name, s.Description)).ToListAsync();
+        var filteredSkus = await _dbContext.Skus.ToListAsync();
+
         
-        return Ok(skus);
+        if (name != null)
+        {
+            filteredSkus = filteredSkus.Where(s => Diacritics.RemoveDiacritics(s.Description).Contains(Diacritics.RemoveDiacritics(name), StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        
+        if (idLinha != null)
+        {
+            filteredSkus = filteredSkus.Where(s => s.SkusLinhasDeEnchimento.Any(s => s.LinhaDeEnchimentoId == idLinha))
+                .ToList();
+        }
+
+        var pagesCount = filteredSkus.Count / pageSize;
+        filteredSkus = filteredSkus.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        var skuList = new SkuListDTO(filteredSkus.Select(s => new SkuDto(s.Code, s.Name, s.Description)).ToList(),
+            pagesCount + 1);
+        
+        return Ok(skuList);
     }
 
     [HttpGet("get_sku")]
