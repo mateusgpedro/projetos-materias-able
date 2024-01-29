@@ -1,6 +1,5 @@
 import { Box, CssBaseline, CssVarsProvider, Link } from "@mui/joy";
 import Sidebar from "../components/Sidebar";
-import Header from "../components/Skus/Header";
 
 function DashboardPage({ setIsLoggedIn }) {
   return (

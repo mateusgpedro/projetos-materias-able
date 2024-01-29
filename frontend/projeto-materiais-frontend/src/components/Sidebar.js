@@ -21,10 +21,22 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { useNavigate } from "react-router-dom";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import React from "react";
+import React, { useContext, useState } from "react";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import axiosInstance from "../utils/axiosInstance";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import SwapCallsOutlinedIcon from "@mui/icons-material/SwapCallsOutlined";
+import { useSidebarContext } from "../Contexts/SidebarContext";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 
-function ItemListaSidebar(indexSelected, index, page, nome, icon) {
+function ItemListaSidebar({
+  indexSelected,
+  index,
+  page,
+  name,
+  icon,
+  level = "title-sm",
+}) {
   const navigate = useNavigate();
   return (
     <ListItem>
@@ -33,16 +45,62 @@ function ItemListaSidebar(indexSelected, index, page, nome, icon) {
         onClick={() => (indexSelected !== index ? navigate(page) : null)}
       >
         {icon}
-        <Typography sx={{ fontSize: "0.8rem" }} level="title-sm">
-          {nome}
+        <Typography sx={{ fontSize: "0.8rem" }} level={level}>
+          {name}
         </Typography>
       </ListItemButton>
     </ListItem>
   );
 }
 
+function NestedItemListaSidebar({ icon, name, children, setOpen, open }) {
+  return (
+    <ListItem nested>
+      <ListItemButton onClick={() => setOpen(!open)}>
+        {icon}
+        <ListItemContent>
+          <Typography sx={{ fontSize: "0.8rem" }} level="title-sm">
+            {name}
+          </Typography>
+        </ListItemContent>
+        <KeyboardArrowDownIcon
+          sx={{ transform: open ? "rotate(180deg)" : "none" }}
+        />
+      </ListItemButton>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateRows: open ? "1fr" : "0fr",
+          transition: "0.2s ease",
+          "& > *": {
+            overflow: "hidden",
+          },
+        }}
+      >
+        {children}
+      </Box>
+    </ListItem>
+  );
+}
+
 function Sidebar({ indexSelected, setIsLoggedIn }) {
   const navigate = useNavigate();
+  const {
+    openLocasInstalacao,
+    setOpenLocasInstalacao,
+    openArmazens,
+    setOpenArmazens,
+    openFabrica,
+    setOpenFabrica,
+    openListaMateriais,
+    setOpenListaMateriais,
+    openMovimentosMateriais,
+    setOpenMovimentosMateriais,
+    openPlaneamentoMateriais,
+    setOpenPlaneamentoMateriais,
+    openInventario,
+    setOpenInventario,
+  } = useSidebarContext();
 
   async function handleLogout() {
     try {
@@ -63,41 +121,166 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
   }
 
   const itemList = [
-    ItemListaSidebar(
-      indexSelected,
-      0,
-      "/dashboard",
-      "Dashboard",
-      <DashboardOutlinedIcon />
-    ),
-    ItemListaSidebar(
-      indexSelected,
-      1,
-      "/skus",
-      "SKU's",
-      <ViewListOutlinedIcon />
-    ),
-    ItemListaSidebar(
-      indexSelected,
-      2,
-      "/existencias-armazem",
-      "Existências no armazém",
-      <Inventory2OutlinedIcon />
-    ),
-    ItemListaSidebar(
-      indexSelected,
-      3,
-      "/planos-producao",
-      "Planos de Produção",
-      <CalendarMonthOutlinedIcon />
-    ),
-    ItemListaSidebar(
-      indexSelected,
-      4,
-      "/inventario",
-      "Inventário",
-      <InventoryOutlinedIcon />
-    ),
+    <ItemListaSidebar
+      indexSelected={indexSelected}
+      index={0}
+      page={"/dashboard"}
+      name={"Dashboard"}
+      icon={<DashboardOutlinedIcon />}
+    />,
+
+    <NestedItemListaSidebar
+      setOpen={setOpenLocasInstalacao}
+      open={openLocasInstalacao}
+      icon={<AccountTreeOutlinedIcon />}
+      name={"Locais de Instalação"}
+    >
+      <List sx={{ gap: 0.5, mt: 0.5 }}>
+        <NestedItemListaSidebar
+          setOpen={setOpenArmazens}
+          open={openArmazens}
+          name={"Armazéns"}
+        ></NestedItemListaSidebar>
+        <NestedItemListaSidebar
+          setOpen={setOpenFabrica}
+          open={openFabrica}
+          name={"Fábrica"}
+        ></NestedItemListaSidebar>
+      </List>
+    </NestedItemListaSidebar>,
+
+    <NestedItemListaSidebar
+      setOpen={setOpenListaMateriais}
+      open={openListaMateriais}
+      icon={<ViewListOutlinedIcon />}
+      name={"Lista de Materiais"}
+    >
+      <List sx={{ gap: 0.5, mt: 0.5 }}>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={1}
+          page={"/skus"}
+          name={"Lista de SKU's"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={2}
+          name={"Lista de materiais Produção"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={3}
+          name={"Lista de materiais Manutenção"}
+          level="body-sm"
+        ></ItemListaSidebar>
+      </List>
+    </NestedItemListaSidebar>,
+
+    <NestedItemListaSidebar
+      setOpen={setOpenMovimentosMateriais}
+      open={openMovimentosMateriais}
+      icon={<SwapCallsOutlinedIcon />}
+      name={"Movimentos de Materiais"}
+    >
+      <List sx={{ gap: 0.5, mt: 0.5 }}>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={4}
+          name={"Recebimento de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={5}
+          name={"Entrega de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={6}
+          name={"Devolução de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={7}
+          name={"Bloqueio de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={8}
+          name={"Abate de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+      </List>
+    </NestedItemListaSidebar>,
+
+    <NestedItemListaSidebar
+      setOpen={setOpenPlaneamentoMateriais}
+      open={openPlaneamentoMateriais}
+      icon={<CalendarMonthOutlinedIcon />}
+      name={"Planeamento de Materiais"}
+    >
+      <List sx={{ gap: 0.5, mt: 0.5 }}>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={9}
+          name={"Planear necessidade de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={10}
+          name={"Mapa com planeamento de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={11}
+          name={"Compra de materiais"}
+          level="body-sm"
+        ></ItemListaSidebar>
+      </List>
+    </NestedItemListaSidebar>,
+
+    <NestedItemListaSidebar
+      setOpen={setOpenInventario}
+      open={openInventario}
+      icon={<InventoryOutlinedIcon />}
+      name={"Inventário"}
+    >
+      <List sx={{ gap: 0.5, mt: 0.5 }}>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={12}
+          name={"Ficha de inventário"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={13}
+          name={"Lançamento de contagens"}
+          level="body-sm"
+        ></ItemListaSidebar>
+        <ItemListaSidebar
+          indexSelected={indexSelected}
+          index={14}
+          name={"Acertos de inventário"}
+          level="body-sm"
+        ></ItemListaSidebar>
+      </List>
+    </NestedItemListaSidebar>,
+
+    <ItemListaSidebar
+      indexSelected={indexSelected}
+      index={15}
+      name={"Relatório"}
+      level="title-sm"
+      icon={<AssignmentOutlinedIcon />}
+    ></ItemListaSidebar>,
   ];
 
   return (
@@ -120,10 +303,7 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
           <GlobalStyles
             styles={(theme) => ({
               ":root": {
-                "--Sidebar-width": "240px",
-                // [theme.breakpoints.up("lg")]: {
-                //   "--Sidebar-width": "240px",
-                // },
+                "--Sidebar-width": "270px",
               },
             })}
           />
@@ -143,6 +323,7 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
               sx={{
                 gap: 1,
                 "--ListItem-radius": (theme) => theme.vars.radius.sm,
+                "--List-nestedInsetStart": "30px",
               }}
             >
               {itemList.map((item, index) => (
@@ -155,13 +336,13 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
                 "--ListItem-radius": (theme) => theme.vars.radius.sm,
               }}
             >
-              {ItemListaSidebar(
-                indexSelected,
-                5,
-                "/definicoes",
-                "Definições",
-                <SettingsOutlinedIcon fontSize="small" />
-              )}
+              <ItemListaSidebar
+                indexSelected={indexSelected}
+                index={16}
+                page={"/definicoes"}
+                name={"Definições"}
+                icon={<SettingsOutlinedIcon fontSize="small" />}
+              />
             </List>
           </Box>
           <Divider />

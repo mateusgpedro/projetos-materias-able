@@ -8,6 +8,8 @@ import {
   FormLabel,
   Input,
   Link,
+  Option,
+  Select,
   Sheet,
   Typography,
 } from "@mui/joy";
@@ -16,7 +18,6 @@ import Header from "../components/Skus/Header";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import Filters from "../components/Filter";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import SelectMultiple from "../components/SelectMultiple";
 import SkuTable from "../components/Skus/SkuTable";
 import { useEffect, useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
@@ -26,6 +27,9 @@ function SkusPage({ setIsLoggedIn }) {
   const [isVeryfing, setIsVeryfing] = useState(true);
   const [skus, setSkus] = useState();
   const [pageCount, setPageCount] = useState();
+  const [searchName, setSearchName] = useState("");
+  const [linhas, setLinhas] = useState();
+  const [searchLinha, setSearchLinha] = useState();
 
   async function handleFetchSkus(name, idLinha, page, pageSize) {
     try {
@@ -37,7 +41,14 @@ function SkusPage({ setIsLoggedIn }) {
         ? response.data.skuList
         : [response.data.skuList];
 
-      setSkus(skusArray);
+      const skusWithArrays = skusArray.map((sku) => ({
+        ...sku,
+        linhasNome: Array.isArray(sku.linhasNome)
+          ? sku.linhasNome
+          : [sku.linhasNome],
+      }));
+
+      setSkus(skusWithArrays);
       console.log("Skus state updated:", skusArray);
 
       setPageCount(response.data.pagesCount);
@@ -46,13 +57,28 @@ function SkusPage({ setIsLoggedIn }) {
     }
   }
 
+  async function fetchLinhas() {
+    try {
+      const response = await axiosInstance.get(`/linhas/get_linhas`);
+
+      const linhasArray = Array.isArray(response.data)
+        ? response.data
+        : [response.data];
+
+      setLinhas(linhasArray);
+    } catch (error) {
+      console.error("Error fetching linhas:", error);
+    }
+  }
+
   useEffect(() => {
-    const getSkus = async () => {
+    const getInitialInfo = async () => {
       await handleFetchSkus("", "", 1, 16);
+      await fetchLinhas();
       setIsVeryfing(false);
     };
 
-    getSkus();
+    getInitialInfo();
   }, []);
 
   const path = [
@@ -77,8 +103,10 @@ function SkusPage({ setIsLoggedIn }) {
         size="sm"
         startDecorator={<SearchOutlinedIcon fontSize="small" />}
         placeholder="Insira um nome ou código"
+        onChange={(event) => {
+          setSearchName(event.target.value);
+        }}
         sx={{
-          color: "neutral.400",
           "--Input-minHeight": "32px",
           "--Input-radius": "8px",
           "--Input-paddingInline": "6px",
@@ -95,8 +123,41 @@ function SkusPage({ setIsLoggedIn }) {
       }}
     >
       <FormLabel>Local de enchimento</FormLabel>
-      <SelectMultiple />
+      <Select
+        onChange={(event, newValue) => {
+          console.log(newValue);
+          setSearchLinha(newValue);
+        }}
+        placeholder="Escolha o local de enchimento"
+        sx={{
+          minWidth: "15rem",
+          color: "neutral",
+        }}
+        slotProps={{
+          listbox: {
+            sx: {
+              width: "100%",
+            },
+          },
+        }}
+      >
+        {linhas?.map((linha) => (
+          <Option value={linha.id}>{linha.name}</Option>
+        ))}
+      </Select>
     </FormControl>,
+
+    <Button
+      type="submit"
+      sx={{
+        maxWidth: "32px",
+        maxHeight: "32px",
+        minWidth: "32px",
+        minHeight: "32px",
+      }}
+    >
+      <SearchOutlinedIcon fontSize="lg" />
+    </Button>,
   ];
 
   return (
@@ -134,7 +195,12 @@ function SkusPage({ setIsLoggedIn }) {
                 SKU's
               </Typography>
             </Box>
-            <Filters items={filters} />
+            <Filters
+              searchName={searchName}
+              searchLinha={searchLinha}
+              fetchSkus={handleFetchSkus}
+              items={filters}
+            />
             <Box
               sx={{
                 display: "flex",

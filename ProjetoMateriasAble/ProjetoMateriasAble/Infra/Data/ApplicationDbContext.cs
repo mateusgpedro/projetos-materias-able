@@ -96,6 +96,8 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
         builder.Entity<SkuLinhaEnchimento>(sle =>
         {
             sle.HasKey(sle => new { sle.SkuId, sle.LinhaDeEnchimentoId});
+
+            sle.Property(sle => sle.LinhaDeEnchimentoId).ValueGeneratedOnAdd();
             
             sle.HasOne(sle => sle.Sku)
                 .WithMany(s => s.SkusLinhasDeEnchimento)

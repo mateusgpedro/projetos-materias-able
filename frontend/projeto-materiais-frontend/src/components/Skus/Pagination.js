@@ -59,12 +59,18 @@ export default function ({ totalPages, fetchSkus }) {
   };
 
   useEffect(() => {
-    if (currentPage === 1) {
+    if (currentPage == 1 && currentPage == totalPages) {
+      setPrevDisabled(true);
+      setNextDisabled(true);
+    } else if (currentPage === 1) {
       setPrevDisabled(true);
       setNextDisabled(false);
     } else if (currentPage === totalPages) {
       setPrevDisabled(false);
       setNextDisabled(true);
+    } else {
+      setPrevDisabled(false);
+      setNextDisabled(false);
     }
 
     let beforePages = currentPage - 1;

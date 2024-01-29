@@ -1,3 +1,3 @@
 namespace ProjetoMateriasAble.DTOs;
 
-public record SkuDto(string Code, string Name, string? Description);
+public record SkuDto(string Code, string Name, string? Description, List<string> LinhasNome);

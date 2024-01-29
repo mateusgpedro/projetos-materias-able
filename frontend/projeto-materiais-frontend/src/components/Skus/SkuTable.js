@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Chip,
   Dropdown,
   IconButton,
   Menu,
@@ -53,7 +54,15 @@ export default function SkuTable({ skus }) {
               <td>
                 <Typography fontSize="0.725rem">{sku.name}</Typography>
               </td>
-              <td></td>
+              <td>
+                <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
+                  {sku.linhasNome?.map((linha) => (
+                    <Chip variant="soft" size="sm" color="primary">
+                      {linha}
+                    </Chip>
+                  ))}
+                </Box>
+              </td>
               <td style={{ textAlign: "center" }}>
                 <Box>
                   <Dropdown>
