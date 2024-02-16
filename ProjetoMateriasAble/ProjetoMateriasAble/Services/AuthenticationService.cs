@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using ProjetoMateriasAble.DTOs;
 using ProjetoMateriasAble.Infra;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Infra.Utils;
@@ -29,13 +30,19 @@ public class AuthenticationService : IAuthenticationService
     {
         ServiceResponse<string> response = new ServiceResponse<string>();
 
+        
+        var roles = await _userManager.GetRolesAsync(user);
+        
+        var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
+        
         var claims = await _userManager.GetClaimsAsync(user);
         var subject = new ClaimsIdentity(new Claim[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email)
+            new Claim(ClaimTypes.Email, user.Email),
         });
         subject.AddClaims(claims);
+        subject.AddClaims(roleClaims);
 
         var key = Encoding.ASCII.GetBytes(_configuration["JwtBearerTokenSettings:SecretKey"]);
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -55,9 +62,9 @@ public class AuthenticationService : IAuthenticationService
         return response;
     }
 
-    public async Task<ServiceResponse<bool>> ValidateTokenAsync(string token)
+    public async Task<ServiceResponse<string>> ValidateTokenAsync(string token)
     {
-        ServiceResponse<bool> response = new ServiceResponse<bool>();
+        ServiceResponse<string> response = new ServiceResponse<string>();
 
         const string bearerPrefix = "Bearer ";
         if (token.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
@@ -77,8 +84,6 @@ public class AuthenticationService : IAuthenticationService
             ValidIssuer = _configuration["JwtBearerTokenSettings:Issuer"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtBearerTokenSettings:SecretKey"]))
         };
-
-        SecurityToken validatedToken;
         
         try
         {
@@ -86,19 +91,20 @@ public class AuthenticationService : IAuthenticationService
 
             if (result.IsValid)
             {
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+                var email = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "email").ToString();
+                
                 response.isSuccess = true;
-                response.data = true;
+                response.data = email;
             }
             else
             {
                 response.isSuccess = false;
-                response.data = false;
             }
         }
         catch (Exception e)
         {
             response.isSuccess = false;
-            response.data = false;
             Console.WriteLine(e);   
         }
         

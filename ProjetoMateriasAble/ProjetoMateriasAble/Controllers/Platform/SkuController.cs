@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -86,9 +87,8 @@ public class SkuController : ControllerBase
 
     [HttpGet("get_skus")]
     public async Task<ActionResult<SkuListDTO>> GetAllSkus([FromQuery] string? name, [FromQuery] uint? idLinha, [FromQuery] int page, [FromQuery] int pageSize)
-    {
+    { 
         var filteredSkus = await _dbContext.Skus.Include(s => s.SkusLinhasDeEnchimento).ToListAsync();
-
         
         if (name != null)
         {

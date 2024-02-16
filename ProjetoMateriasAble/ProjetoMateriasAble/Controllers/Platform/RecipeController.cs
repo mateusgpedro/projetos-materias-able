@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -54,16 +57,17 @@ public class RecipeController : ControllerBase
         return Ok("Receita criada");
     }
 
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Dev")]
     [HttpGet("get_recipe")]
-    public async Task<ActionResult<RecipeDto>> GetRecipe([FromQuery] int skuId)
+    public async Task<ActionResult<RecipeDto>> GetRecipe([FromQuery] string code)
     {
         var sku = await _dbContext.Skus.Include(s => s.Recipe)
-            .FirstOrDefaultAsync(s => s.Id == skuId);
+            .FirstOrDefaultAsync(s => s.Code == code);
         if (sku == null)
-            return BadRequest($"Não foi possível encontrar nenhum SKU com o ID {skuId}");
+            return BadRequest($"Não foi possível encontrar nenhum SKU com o código {code}");
 
         if (sku.Recipe == null)
-            return BadRequest($"O SKU com o ID {skuId} não possui uma receita");
+            return BadRequest($"O SKU com o código {code} não possui uma receita");
 
         var recipe = sku.Recipe;
         
@@ -76,58 +80,11 @@ public class RecipeController : ControllerBase
             .Select(qs =>
             {
                 var material = materialsList.FirstOrDefault(m => m.Id == qs.Key);
-                return new RecipeMaterialDto(material.Id, material.Name, qs.Value);
+                return new RecipeMaterialDto(material.Id, material.Code, material.Name, qs.Value, material.Quebra, material.Cost);
             })
             .ToList();
         
-        var recipeDto = new RecipeDto(skuId, sku.Name, materials);
+        var recipeDto = new RecipeDto(sku.Id, sku.Code, sku.Name, materials);
         return Ok(recipeDto);
     }
-
-    [HttpGet("get_all_recipes")]
-    public async Task<ActionResult<List<RecipeDto>>> GetAllRecipes()
-    {
-        var recipes = await _dbContext.Recipes.Include(r => r.Sku)
-            .ToListAsync();
-
-        var recipeDtos = recipes
-            .Select(r => new RecipeDto(
-                r.SkuId,
-                r.Sku?.Name ?? "Unknown", // Add a null check for r.Sku
-                r.QuantitiesData
-                    .Select(qs =>
-                    {
-                        var material = _dbContext.Materials.FirstOrDefault(m => m.Id == qs.Key);
-                        return new RecipeMaterialDto(material?.Id ?? 0, material?.Name ?? "Unknown", qs.Value); // Add null checks for material
-                    })
-                    .ToList()
-            ))
-            .ToList();
-
-        return Ok(recipeDtos);
-    }
-
-    /*[HttpDelete("remove_recipe")]
-    public async Task<ActionResult> RemoveRecipe([FromQuery] int skuId)
-    {
-        var sku = await _dbContext.Skus.Include(s => s.Recipe).FirstOrDefaultAsync(s => s.Id == skuId);
-        if (sku == null)
-            return BadRequest($"O SKU com o ID {skuId} não existe");
-        if (sku.Recipe == null)
-            return BadRequest($"O SKU com o ID {skuId} não tem uma receita associada");
-
-        if (sku.RecipeId != null)
-        {
-            var recipe = await _dbContext.Recipes.FindAsync(sku.RecipeId);
-            if (recipe != null)
-            {
-                _dbContext.Recipes.Remove(recipe);
-            }
-        }
-
-        sku.Recipe = null;
-        sku.RecipeId = null;
-        await _dbContext.SaveChangesAsync();
-        return Ok();
-    }*/
 }

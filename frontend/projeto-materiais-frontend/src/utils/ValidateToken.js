@@ -1,7 +1,7 @@
 import axios from "axios";
 import axiosInstance from "./axiosInstance";
 
-const fetchValidation = async ({ setIsLoggedIn }) => {
+const fetchValidation = async ({ setIsLoggedIn, setUserRoles }) => {
   try {
     const response = await axiosInstance.post(
       "/auth/validate-jwt",
@@ -17,6 +17,11 @@ const fetchValidation = async ({ setIsLoggedIn }) => {
     console.log("Jwt is valid");
 
     setIsLoggedIn(true);
+
+    sessionStorage.setItem("email", response.data.email);
+    sessionStorage.setItem("fullname", response.data.fullname);
+
+    setUserRoles(response.data.roles);
 
     return true;
   } catch (error) {

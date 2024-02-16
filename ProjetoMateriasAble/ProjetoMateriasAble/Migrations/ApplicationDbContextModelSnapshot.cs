@@ -278,6 +278,23 @@ namespace ProjetoMateriasAble.Migrations
                     b.ToTable("LinhasDeEnchimento");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Manufacturer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Manufacturers");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Material", b =>
                 {
                     b.Property<int>("Id")
@@ -289,7 +306,18 @@ namespace ProjetoMateriasAble.Migrations
                     b.Property<int>("Amount")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("Approved")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Cost")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ManufacturerCode")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -299,6 +327,16 @@ namespace ProjetoMateriasAble.Migrations
 
                     b.Property<int>("PositionsCount")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Quebra")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockSeguranca")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

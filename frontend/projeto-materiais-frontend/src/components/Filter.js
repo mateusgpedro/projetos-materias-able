@@ -1,10 +1,20 @@
 import { Box, FormControl } from "@mui/joy";
 
-function Filters({ items, fetchSkus, searchName, searchLinha }) {
+function Filters({
+  items,
+  fetchSkus,
+  searchName,
+  searchLinha,
+  setSearchedName,
+  setSearchedLinha,
+  setCurrentPage,
+}) {
   const getSkus = async (event) => {
-    console.log(searchLinha);
     event.preventDefault();
     await fetchSkus(searchName, searchLinha, 1, 16);
+    setSearchedName(searchName);
+    setSearchedLinha(searchLinha);
+    setCurrentPage(1);
   };
 
   return (

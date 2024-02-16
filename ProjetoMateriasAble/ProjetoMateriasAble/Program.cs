@@ -17,21 +17,22 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
-{
-    options.User.RequireUniqueEmail = true;
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyz1234567890._-";
+    {
+        options.User.RequireUniqueEmail = true;
+        options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyz1234567890._-";
 
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
+        options.Password.RequireDigit = false;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
 
-    options.SignIn.RequireConfirmedEmail = false;
-})
+        options.SignIn.RequireConfirmedEmail = false;
+    })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddErrorDescriber<IdentityErrorDescriber>()
-    .AddTokenProvider("Custom", typeof(DataProtectorTokenProvider<AppUser>));
+    .AddErrorDescriber<IdentityErrorDescriber>();
+
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(op =>
 {
@@ -102,5 +103,18 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    var roles = new[] { "User", "Admin", "Chefia", "Dev" };
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+}
 
 app.Run();

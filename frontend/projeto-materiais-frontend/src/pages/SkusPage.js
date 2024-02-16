@@ -6,6 +6,7 @@ import {
   CssVarsProvider,
   FormControl,
   FormLabel,
+  GlobalStyles,
   Input,
   Link,
   Option,
@@ -27,9 +28,12 @@ function SkusPage({ setIsLoggedIn }) {
   const [isVeryfing, setIsVeryfing] = useState(true);
   const [skus, setSkus] = useState();
   const [pageCount, setPageCount] = useState();
-  const [searchName, setSearchName] = useState("");
   const [linhas, setLinhas] = useState();
-  const [searchLinha, setSearchLinha] = useState();
+  const [toSearchName, setToSearchName] = useState("");
+  const [toSearchLinha, setToSearchLinha] = useState("");
+  const [searchedName, setSearchedName] = useState("");
+  const [searchedLinha, setSearchedLinha] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function handleFetchSkus(name, idLinha, page, pageSize) {
     try {
@@ -49,7 +53,6 @@ function SkusPage({ setIsLoggedIn }) {
       }));
 
       setSkus(skusWithArrays);
-      console.log("Skus state updated:", skusArray);
 
       setPageCount(response.data.pagesCount);
     } catch (error) {
@@ -86,7 +89,7 @@ function SkusPage({ setIsLoggedIn }) {
       <DashboardIcon fontSize="small" />
     </Link>,
     <Link key="sku" href="#" color="neutral">
-      <Typography>SKU's</Typography>
+      <Typography>Lista SKU's</Typography>
     </Link>,
   ];
 
@@ -104,7 +107,7 @@ function SkusPage({ setIsLoggedIn }) {
         startDecorator={<SearchOutlinedIcon fontSize="small" />}
         placeholder="Insira um nome ou código"
         onChange={(event) => {
-          setSearchName(event.target.value);
+          setToSearchName(event.target.value);
         }}
         sx={{
           "--Input-minHeight": "32px",
@@ -125,8 +128,7 @@ function SkusPage({ setIsLoggedIn }) {
       <FormLabel>Local de enchimento</FormLabel>
       <Select
         onChange={(event, newValue) => {
-          console.log(newValue);
-          setSearchLinha(newValue);
+          setToSearchLinha(newValue);
         }}
         placeholder="Escolha o local de enchimento"
         sx={{
@@ -141,13 +143,19 @@ function SkusPage({ setIsLoggedIn }) {
           },
         }}
       >
+        <Option key={"none"} value={""}>
+          Nenhum
+        </Option>
         {linhas?.map((linha) => (
-          <Option value={linha.id}>{linha.name}</Option>
+          <Option key={linha.id} value={linha.id}>
+            {linha.name}
+          </Option>
         ))}
       </Select>
     </FormControl>,
 
     <Button
+      key={"submit"}
       type="submit"
       sx={{
         maxWidth: "32px",
@@ -167,6 +175,7 @@ function SkusPage({ setIsLoggedIn }) {
         <CssBaseline>
           <Box
             sx={{
+              ml: "var(--Sidebar-width)",
               display: "flex",
               flexGrow: 1,
               flexDirection: "column",
@@ -174,6 +183,13 @@ function SkusPage({ setIsLoggedIn }) {
               py: 3.5,
             }}
           >
+            <GlobalStyles
+              styles={(theme) => ({
+                ":root": {
+                  "--Sidebar-width": "270px",
+                },
+              })}
+            />
             <Header linkItems={path} />
             <Box
               sx={{
@@ -186,7 +202,7 @@ function SkusPage({ setIsLoggedIn }) {
               }}
             >
               <Typography
-                level="h1"
+                level="h2"
                 sx={{
                   color: "neutral.900",
                   margin: 0,
@@ -196,8 +212,11 @@ function SkusPage({ setIsLoggedIn }) {
               </Typography>
             </Box>
             <Filters
-              searchName={searchName}
-              searchLinha={searchLinha}
+              setCurrentPage={setCurrentPage}
+              searchName={toSearchName}
+              searchLinha={toSearchLinha}
+              setSearchedLinha={setSearchedLinha}
+              setSearchedName={setSearchedName}
               fetchSkus={handleFetchSkus}
               items={filters}
             />
@@ -215,7 +234,14 @@ function SkusPage({ setIsLoggedIn }) {
               ) : (
                 <SkuTable skus={skus} />
               )}
-              <Pagination fetchSkus={handleFetchSkus} totalPages={pageCount} />
+              <Pagination
+                setCurrentPage={setCurrentPage}
+                currentPage={currentPage}
+                searchedLinha={searchedLinha}
+                searchedName={searchedName}
+                fetchSkus={handleFetchSkus}
+                totalPages={pageCount}
+              />
             </Box>
           </Box>
         </CssBaseline>

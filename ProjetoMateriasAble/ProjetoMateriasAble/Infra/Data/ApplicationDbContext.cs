@@ -107,11 +107,19 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
                 .WithMany(le => le.SkusLinhasDeEnchimento)
                 .HasForeignKey(sle => sle.LinhaDeEnchimentoId);
         });
+
+        builder.Entity<Manufacturer>(m =>
+        {
+            m.HasKey(m => new { m.Id });
+
+            m.Property(m => m.Id).ValueGeneratedOnAdd();
+        });
         
         base.OnModelCreating(builder);
     }
 
-    public DbSet<SkuLinhaEnchimento>SkusLinhasDeEnchimento { get; set; }
+    public DbSet<Manufacturer> Manufacturers { get; set; }
+    public DbSet<SkuLinhaEnchimento> SkusLinhasDeEnchimento { get; set; }
     public DbSet<LinhaDeEnchimento> LinhasDeEnchimento { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Material> Materials { get; set; }

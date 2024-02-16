@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
+using ProjetoMateriasAble.DTOs;
 using ProjetoMateriasAble.Infra;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Models;
@@ -122,7 +124,7 @@ public class AuthController : ControllerBase
     
     [AllowAnonymous]
     [HttpPost("validate-jwt")]
-    public async Task<ActionResult> ValidateTokenAsync([FromHeader] string? authorization)
+    public async Task<ActionResult<LoginDto>> ValidateTokenAsync([FromHeader] string? authorization)
     {
         if (authorization == null)
         {
@@ -131,11 +133,23 @@ public class AuthController : ControllerBase
         
         var result = await _authenticationService.ValidateTokenAsync(authorization);
 
-        if (!result.data)
+        if (!result.isSuccess)
         {
             return Unauthorized(result.Errors);
         }
+
+        string email = "";
+        const string emailPrefix = "email: ";
+        if (result.data.StartsWith(emailPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            email = result.data.Substring(emailPrefix.Length);
+        }
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+            return Unauthorized("Usuário não existe");
+
+        var roles = await _userManager.GetRolesAsync(user) as List<string>;
         
-        return Ok();
+        return Ok(new LoginDto(user.FullName, user.Email, roles));
     }
 }

@@ -13,7 +13,7 @@ function PaginationButton({
 }) {
   const handleMouseDown = async () => {
     try {
-      await fetchSkus("", "", value, 16);
+      await fetchSkus(nameFilter, linhaId, value, 16);
       setCurrentPage(value);
     } catch (error) {
       console.error("Error fetching skus:", error);
@@ -32,17 +32,21 @@ function PaginationButton({
   );
 }
 
-export default function ({ totalPages, fetchSkus }) {
+export default function ({
+  totalPages,
+  fetchSkus,
+  searchedName,
+  searchedLinha,
+  currentPage,
+  setCurrentPage,
+}) {
   const [pages, setPages] = useState([]);
   const [prevDisabled, setPrevDisabled] = useState();
   const [nextDisabled, setNextDisabled] = useState();
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const maxComponents = totalPages > 7 ? 7 : totalPages;
 
   const handleMouseDownPrev = async () => {
     try {
-      await fetchSkus("", "", currentPage - 1, 16);
+      await fetchSkus(searchedName, searchedLinha, currentPage - 1, 16);
       setCurrentPage(currentPage - 1);
     } catch (error) {
       console.error("Error fetching skus:", error);
@@ -51,7 +55,7 @@ export default function ({ totalPages, fetchSkus }) {
 
   const handleMouseDownNext = async () => {
     try {
-      await fetchSkus("", "", currentPage + 1, 16);
+      await fetchSkus(searchedName, searchedLinha, currentPage + 1, 16);
       setCurrentPage(currentPage + 1);
     } catch (error) {
       console.error("Error fetching skus:", error);
@@ -81,6 +85,8 @@ export default function ({ totalPages, fetchSkus }) {
     if (currentPage > 2) {
       components.push(
         <PaginationButton
+          linhaId={searchedLinha}
+          nameFilter={searchedName}
           setCurrentPage={setCurrentPage}
           fetchSkus={fetchSkus}
           isSelected={1 === currentPage}
@@ -97,6 +103,8 @@ export default function ({ totalPages, fetchSkus }) {
       } else if (currentPage > 3) {
         components.push(
           <PaginationButton
+            linhaId={searchedLinha}
+            nameFilter={searchedName}
             setCurrentPage={setCurrentPage}
             fetchSkus={fetchSkus}
             isSelected={2 === currentPage}
@@ -134,6 +142,8 @@ export default function ({ totalPages, fetchSkus }) {
 
       components.push(
         <PaginationButton
+          linhaId={searchedLinha}
+          nameFilter={searchedName}
           setCurrentPage={setCurrentPage}
           fetchSkus={fetchSkus}
           isSelected={index === currentPage}
@@ -153,6 +163,8 @@ export default function ({ totalPages, fetchSkus }) {
       } else if (currentPage < totalPages - 2) {
         components.push(
           <PaginationButton
+            linhaId={searchedLinha}
+            nameFilter={searchedName}
             setCurrentPage={setCurrentPage}
             fetchSkus={fetchSkus}
             isSelected={totalPages - 1 === currentPage}
@@ -163,6 +175,8 @@ export default function ({ totalPages, fetchSkus }) {
       }
       components.push(
         <PaginationButton
+          linhaId={searchedLinha}
+          nameFilter={searchedName}
           setCurrentPage={setCurrentPage}
           fetchSkus={fetchSkus}
           isSelected={totalPages === currentPage}

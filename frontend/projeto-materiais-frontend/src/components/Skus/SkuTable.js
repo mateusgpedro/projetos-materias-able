@@ -12,14 +12,20 @@ import {
   Typography,
 } from "@mui/joy";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { useNavigate } from "react-router-dom";
 
 export default function SkuTable({ skus }) {
+  const navigate = useNavigate();
+  const handleViewRecipe = async (skuCode) => {
+    navigate(`/skus/recipe?c=${skuCode}`);
+  };
+
   return (
     <Sheet
       variant="outlined"
       sx={{
-        display: "flex",
-        width: "100%",
+        display: { xs: "none", sm: "initial" },
+        width: 1,
         borderRadius: "sm",
         overflow: "auto",
       }}
@@ -36,13 +42,13 @@ export default function SkuTable({ skus }) {
         }}
       >
         <thead>
-          <tr key="codigo">
-            <th style={{ width: "10%", verticalAlign: "middle" }}>Código</th>
-            <th style={{ width: "45%", verticalAlign: "middle" }}>Nome</th>
-            <th style={{ width: "40%", verticalAlign: "middle" }}>
+          <tr key="header">
+            <th style={{ width: "15%", verticalAlign: "middle" }}>Código</th>
+            <th style={{ width: "35%", verticalAlign: "middle" }}>Nome</th>
+            <th style={{ width: "43%", verticalAlign: "middle" }}>
               Locais de enchimento
             </th>
-            <th style={{ width: "5%", verticalAlign: "middle" }}></th>
+            <th style={{ width: "7%", verticalAlign: "middle" }}></th>
           </tr>
         </thead>
         <tbody>
@@ -56,8 +62,8 @@ export default function SkuTable({ skus }) {
               </td>
               <td>
                 <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
-                  {sku.linhasNome?.map((linha) => (
-                    <Chip variant="soft" size="sm" color="primary">
+                  {sku.linhasNome?.map((linha, index) => (
+                    <Chip key={index} variant="soft" size="sm" color="primary">
                       {linha}
                     </Chip>
                   ))}
@@ -85,7 +91,7 @@ export default function SkuTable({ skus }) {
                       }}
                       size="sm"
                     >
-                      <MenuItem>
+                      <MenuItem onMouseDown={() => handleViewRecipe(sku.code)}>
                         <Typography fontSize="0.8rem">Ver Receita</Typography>
                       </MenuItem>
                     </Menu>

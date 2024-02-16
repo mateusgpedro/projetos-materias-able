@@ -14,7 +14,6 @@ import {
 } from "@mui/joy";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import ViewListOutlinedIcon from "@mui/icons-material/ViewListOutlined";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import InventoryOutlinedIcon from "@mui/icons-material/InventoryOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
@@ -42,7 +41,7 @@ function ItemListaSidebar({
     <ListItem>
       <ListItemButton
         {...(indexSelected === index ? { selected: true } : null)}
-        onClick={() => (indexSelected !== index ? navigate(page) : null)}
+        onClick={() => navigate(page)}
       >
         {icon}
         <Typography sx={{ fontSize: "0.8rem" }} level={level}>
@@ -166,12 +165,14 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
         <ItemListaSidebar
           indexSelected={indexSelected}
           index={2}
+          page={"/materiais_producao"}
           name={"Lista de materiais Produção"}
           level="body-sm"
         ></ItemListaSidebar>
         <ItemListaSidebar
           indexSelected={indexSelected}
           index={3}
+          page={"/materiais_manutencao"}
           name={"Lista de materiais Manutenção"}
           level="body-sm"
         ></ItemListaSidebar>
@@ -288,7 +289,8 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
       <CssBaseline>
         <Sheet
           sx={{
-            overflow: "hidden",
+            height: "100dvh",
+            overflow: "hidden auto",
             zIndex: 10000,
             display: "flex",
             flexDirection: "column",
@@ -296,6 +298,9 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
             borderColor: "divider",
             width: "var(--Sidebar-width)",
             margin: 0,
+            position: "fixed",
+            top: 0,
+            bottom: 0,
             p: 2,
             flexShrink: 0,
           }}
@@ -350,10 +355,10 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
             <AccountCircleOutlinedIcon />
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography sx={{ fontSize: "0.8rem" }} level="title-sm">
-                Mateus Pedro
+                {sessionStorage.getItem("fullname")}
               </Typography>
               <Typography sx={{ fontSize: "0.6rem" }} level="body-xs">
-                mateusgpedro.6@gmail.com
+                {sessionStorage.getItem("email")}
               </Typography>
             </Box>
             <IconButton size="sm" onMouseDown={handleLogout}>

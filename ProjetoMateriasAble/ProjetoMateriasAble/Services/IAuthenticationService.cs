@@ -1,3 +1,4 @@
+using ProjetoMateriasAble.DTOs;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Infra.Utils;
 
@@ -7,7 +8,7 @@ public interface IAuthenticationService
 {
     Task<ServiceResponse<string>> CreateTokenAsync(AppUser user);
 
-    Task<ServiceResponse<bool>> ValidateTokenAsync(string token);
+    Task<ServiceResponse<string>> ValidateTokenAsync(string token);
 
     Task<ServiceResponse<string>> GenerateRefreshToken(AppUser user);
 

@@ -126,7 +126,7 @@ function LoginPage({ setIsLoggedIn }) {
                       sx={{ color: "neutral.50", right: 0 }}
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                    ></Checkbox>
+                    />
                     <Link level="title-sm" href="">
                       Forgot your password?
                     </Link>

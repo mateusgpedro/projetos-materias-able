@@ -1,3 +1,3 @@
 namespace ProjetoMateriasAble.DTOs;
 
-public record MaterialDto(int Id, string Name, int Unities, int PositionsCount);
+public record MaterialDto(int Id, string Code ,string Name, int Unities, string ManufacturerCode, string Cost);
