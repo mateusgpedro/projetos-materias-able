@@ -13,7 +13,7 @@ public class Material
     public int StockSeguranca { get; set; }
     public string Cost { get; set; }
     public string Type { get; set; }
-    public string ManufacturerCode { get; set; }
     public bool Approved { get; set; }
+    public ICollection<ManufacturerCodeRelation> ManufacturerCodeRelations { get; set; }
     public ICollection<WarehouseSlot> WarehouseSlots { get; set; }
 }

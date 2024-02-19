@@ -295,6 +295,33 @@ namespace ProjetoMateriasAble.Migrations
                     b.ToTable("Manufacturers");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ManufacturerCodeRelation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ManufacturerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaterialId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManufacturerId");
+
+                    b.HasIndex("MaterialId");
+
+                    b.ToTable("ManufacturerCodeRelations");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Material", b =>
                 {
                     b.Property<int>("Id")
@@ -314,10 +341,6 @@ namespace ProjetoMateriasAble.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Cost")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ManufacturerCode")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -561,6 +584,25 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("Sku");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ManufacturerCodeRelation", b =>
+                {
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Manufacturer", "Manufacturer")
+                        .WithMany("ManufacturerCodeRelations")
+                        .HasForeignKey("ManufacturerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Material", "Material")
+                        .WithMany("ManufacturerCodeRelations")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Manufacturer");
+
+                    b.Navigation("Material");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionOrder", b =>
                 {
                     b.HasOne("ProjetoMateriasAble.Models.Platform.ProductionPlan", "ProductionPlan")
@@ -613,8 +655,15 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("SkusLinhasDeEnchimento");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Manufacturer", b =>
+                {
+                    b.Navigation("ManufacturerCodeRelations");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Material", b =>
                 {
+                    b.Navigation("ManufacturerCodeRelations");
+
                     b.Navigation("WarehouseSlots");
                 });
 

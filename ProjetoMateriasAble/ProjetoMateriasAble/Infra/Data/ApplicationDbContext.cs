@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Models.Authentication;
 using ProjetoMateriasAble.Models.JoinTables;
@@ -14,9 +15,11 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<Material>()
-            .Property(m => m.Id)
-            .ValueGeneratedOnAdd();
+        builder.Entity<Material>(m =>
+        {
+            m.Property(m => m.Id)
+                .ValueGeneratedOnAdd();
+        });
 
         builder.Entity<WarehouseSlot>(ws =>
         {
@@ -110,14 +113,28 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
 
         builder.Entity<Manufacturer>(m =>
         {
-            m.HasKey(m => new { m.Id });
+            m.HasKey(m => m.Id );
 
             m.Property(m => m.Id).ValueGeneratedOnAdd();
         });
+
+        builder.Entity<ManufacturerCodeRelation>(mcr =>
+        { 
+            mcr.HasKey(mcr => mcr.Id);
+
+            mcr.HasOne(mcr => mcr.Material)
+                .WithMany(m => m.ManufacturerCodeRelations)
+                .HasForeignKey(m => m.MaterialId);
+
+            mcr.HasOne(mcr => mcr.Manufacturer)
+                .WithMany(m => m.ManufacturerCodeRelations)
+                .HasForeignKey(m => m.ManufacturerId);
+        });
         
         base.OnModelCreating(builder);
-    }
+    } 
 
+    public DbSet<ManufacturerCodeRelation> ManufacturerCodeRelations { get; set; }
     public DbSet<Manufacturer> Manufacturers { get; set; }
     public DbSet<SkuLinhaEnchimento> SkusLinhasDeEnchimento { get; set; }
     public DbSet<LinhaDeEnchimento> LinhasDeEnchimento { get; set; }

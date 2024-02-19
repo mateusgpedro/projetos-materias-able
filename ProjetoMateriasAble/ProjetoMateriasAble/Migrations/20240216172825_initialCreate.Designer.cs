@@ -13,8 +13,8 @@ using ProjetoMateriasAble.Infra;
 namespace ProjetoMateriasAble.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231120193505_AlteredSkuTable")]
-    partial class AlteredSkuTable
+    [Migration("20240216172825_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -226,6 +226,105 @@ namespace ProjetoMateriasAble.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Authentication.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.JoinTables.SkuLinhaEnchimento", b =>
+                {
+                    b.Property<int>("SkuId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LinhaDeEnchimentoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    b.HasKey("SkuId", "LinhaDeEnchimentoId");
+
+                    b.HasIndex("LinhaDeEnchimentoId");
+
+                    b.ToTable("SkusLinhasDeEnchimento");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.LinhaDeEnchimento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LinhasDeEnchimento");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Manufacturer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Manufacturers");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ManufacturerCodeRelation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ManufacturerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaterialId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManufacturerId");
+
+                    b.HasIndex("MaterialId");
+
+                    b.ToTable("ManufacturerCodeRelations");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Material", b =>
                 {
                     b.Property<int>("Id")
@@ -237,7 +336,14 @@ namespace ProjetoMateriasAble.Migrations
                     b.Property<int>("Amount")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("Approved")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Cost")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -248,9 +354,68 @@ namespace ProjetoMateriasAble.Migrations
                     b.Property<int>("PositionsCount")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Quebra")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockSeguranca")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("Materials");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SkuId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UnitiesToProduce")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("SkuId");
+
+                    b.ToTable("ProductionOrders");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionPlan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("End")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductionPlans");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Recipe", b =>
@@ -286,6 +451,7 @@ namespace ProjetoMateriasAble.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -402,12 +568,69 @@ namespace ProjetoMateriasAble.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.JoinTables.SkuLinhaEnchimento", b =>
+                {
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.LinhaDeEnchimento", "LinhaDeEnchimento")
+                        .WithMany("SkusLinhasDeEnchimento")
+                        .HasForeignKey("LinhaDeEnchimentoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Sku", "Sku")
+                        .WithMany("SkusLinhasDeEnchimento")
+                        .HasForeignKey("SkuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LinhaDeEnchimento");
+
+                    b.Navigation("Sku");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ManufacturerCodeRelation", b =>
+                {
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Manufacturer", "Manufacturer")
+                        .WithMany("ManufacturerCodeRelations")
+                        .HasForeignKey("ManufacturerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Material", "Material")
+                        .WithMany("ManufacturerCodeRelations")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Manufacturer");
+
+                    b.Navigation("Material");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionOrder", b =>
+                {
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.ProductionPlan", "ProductionPlan")
+                        .WithMany("ProductionOrders")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Sku", "Sku")
+                        .WithMany()
+                        .HasForeignKey("SkuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductionPlan");
+
+                    b.Navigation("Sku");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Sku", b =>
                 {
                     b.HasOne("ProjetoMateriasAble.Models.Platform.Recipe", "Recipe")
                         .WithOne("Sku")
                         .HasForeignKey("ProjetoMateriasAble.Models.Platform.Sku", "RecipeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Recipe");
@@ -430,15 +653,37 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("Warehouse");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.LinhaDeEnchimento", b =>
+                {
+                    b.Navigation("SkusLinhasDeEnchimento");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Manufacturer", b =>
+                {
+                    b.Navigation("ManufacturerCodeRelations");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Material", b =>
                 {
+                    b.Navigation("ManufacturerCodeRelations");
+
                     b.Navigation("WarehouseSlots");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionPlan", b =>
+                {
+                    b.Navigation("ProductionOrders");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Recipe", b =>
                 {
                     b.Navigation("Sku")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Sku", b =>
+                {
+                    b.Navigation("SkusLinhasDeEnchimento");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Warehouse", b =>

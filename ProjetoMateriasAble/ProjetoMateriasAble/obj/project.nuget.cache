@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "f4lwVYllv2QuIeGEBZ8814cXwJUOVAQwi8MnY1khKgvm0K0IIANvR8wZ9ahjcZqUm5H8EO0XdM7NYmbl7gfy9Q==",
+  "dgSpecHash": "Gd4HaGpUZDf//lZn1hNmV0YKcHPWJfGhmsgDr94hcB2m+YhHOmA4pSO2JtYuMO5beF6VU2fVHH3QQzhyJgnSuQ==",
   "success": true,
   "projectFilePath": "C:\\Users\\Mateus\\Documents\\Able\\projetos-materias-able\\ProjetoMateriasAble\\ProjetoMateriasAble\\ProjetoMateriasAble.csproj",
   "expectedPackageFiles": [
@@ -58,6 +58,7 @@
     "C:\\Users\\Mateus\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "C:\\Users\\Mateus\\.nuget\\packages\\mono.texttemplating\\2.2.1\\mono.texttemplating.2.2.1.nupkg.sha512",
     "C:\\Users\\Mateus\\.nuget\\packages\\netstandard.library\\1.6.1\\netstandard.library.1.6.1.nupkg.sha512",
+    "C:\\Users\\Mateus\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\Mateus\\.nuget\\packages\\npgsql\\7.0.6\\npgsql.7.0.6.nupkg.sha512",
     "C:\\Users\\Mateus\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\7.0.11\\npgsql.entityframeworkcore.postgresql.7.0.11.nupkg.sha512",
     "C:\\Users\\Mateus\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql.design\\1.1.0\\npgsql.entityframeworkcore.postgresql.design.1.1.0.nupkg.sha512",

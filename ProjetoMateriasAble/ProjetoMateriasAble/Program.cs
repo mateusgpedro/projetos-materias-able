@@ -31,7 +31,9 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddErrorDescriber<IdentityErrorDescriber>();
+    .AddErrorDescriber<IdentityErrorDescriber>()
+    .AddDefaultTokenProviders()
+    .AddTokenProvider<DataProtectorTokenProvider<AppUser>>("Custom");
 
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(op =>

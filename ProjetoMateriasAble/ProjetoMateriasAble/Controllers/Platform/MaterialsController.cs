@@ -30,6 +30,9 @@ public class MaterialsController : ControllerBase
             return BadRequest($"O material com o nome {request.Name} já existe");
 
         var roles = HttpContext.User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+        var manufacturerCodeRelations = request.Manufacturers
+            .Select(m => new ManufacturerCodeRelation() { });
         
         var shouldApprove = roles.Any(r => r == "Chefia");
         Material newMaterial = new Material
@@ -39,8 +42,7 @@ public class MaterialsController : ControllerBase
             Code = "123",
             StockSeguranca = request.StockSeguranca,
             Cost = request.EstimatedValue,
-            Approved = false,
-            ManufacturerCode = "13413"
+            Approved = false, 
         };
         
         await _dbContext.Materials.AddAsync(newMaterial);
@@ -56,7 +58,7 @@ public class MaterialsController : ControllerBase
         if (material == null)
             return BadRequest("No material with such Id was found");
         
-        MaterialDto dto = new MaterialDto(material.Id, material.Code,material.Name, material.Amount, material.ManufacturerCode, material.Cost);
+        MaterialDto dto = new MaterialDto(material.Id, material.Code,material.Name, material.Amount, material.Cost);
         return Ok(dto);
     }
 
@@ -71,15 +73,17 @@ public class MaterialsController : ControllerBase
 
         if (searchType == 0)
         {
-            filteredMaterials = filteredMaterials.Where(m => Diacritics.RemoveDiacritics(m.Name).Contains(Diacritics.RemoveDiacritics(searchString))).ToList();
+            filteredMaterials = filteredMaterials
+                .Where(m => Diacritics.RemoveDiacritics(m.Name).Contains(Diacritics.RemoveDiacritics(searchString)))
+                .ToList();
         }
 
-        if (searchType == 1)
-        {
-            filteredMaterials = filteredMaterials.Where(m => m.ManufacturerCode == searchString).ToList();
-        }
+        // if (searchType == 1)
+        // {
+        //     filteredMaterials = filteredMaterials.Where(m => m.ManufacturerCode == searchString).ToList();
+        // }
 
-        var materialsList = filteredMaterials.Select(m => new MaterialDto(m.Id, m.Code,m.Name, m.Amount, m.ManufacturerCode, m.Cost)).ToList();
+        var materialsList = filteredMaterials.Select(m => new MaterialDto(m.Id, m.Code,m.Name, m.Amount,  m.Cost)).ToList();
         return Ok(materialsList);
     }
     
@@ -87,7 +91,7 @@ public class MaterialsController : ControllerBase
     public async Task<ActionResult<List<MaterialDto>>> GetAllMaterials()
     {
         var materialDtos = await _dbContext.Materials
-            .Select(m => new MaterialDto(m.Id, m.Code, m.Name, m.Amount, m.ManufacturerCode, m.Cost))
+            .Select(m => new MaterialDto(m.Id, m.Code, m.Name, m.Amount,  m.Cost))
             .ToListAsync();
             
         return Ok(materialDtos);

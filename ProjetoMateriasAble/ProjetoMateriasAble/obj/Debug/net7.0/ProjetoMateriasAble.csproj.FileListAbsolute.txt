@@ -172,3 +172,4 @@ C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\Projet
 C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\obj\Debug\net7.0\ProjetoMateriasAble.pdb
 C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\obj\Debug\net7.0\ProjetoMateriasAble.genruntimeconfig.cache
 C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\obj\Debug\net7.0\ref\ProjetoMateriasAble.dll
+C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\bin\Debug\net7.0\Newtonsoft.Json.dll

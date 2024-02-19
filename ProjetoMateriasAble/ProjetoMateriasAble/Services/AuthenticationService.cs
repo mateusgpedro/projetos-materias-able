@@ -115,7 +115,7 @@ public class AuthenticationService : IAuthenticationService
     {
         var response = new ServiceResponse<string>();
         
-        var newRefreshToken = await _userManager.GenerateUserTokenAsync(user, "Custom", "RefreshToken");
+        var newRefreshToken = await _userManager.GenerateUserTokenAsync(user, "Default", "RefreshToken");
 
         var token = new RefreshToken
         {

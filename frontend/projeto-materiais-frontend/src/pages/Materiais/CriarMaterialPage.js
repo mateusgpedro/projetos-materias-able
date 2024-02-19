@@ -32,6 +32,7 @@ import EmptyBoxImage from "../../imgs/Empty-rafiki.png";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import LookForBoxImage from "../../imgs/Checking boxes-bro.png";
 
 const steps = ["Confirmar existência", "Criar Material", "Concluído"];
 
@@ -102,10 +103,10 @@ function AlreadySearchedMaterial({
       >
         {index !== 0 && <Divider />}
         <Typography level="title-md">{description}</Typography>
-        <Typography level="title-sm">
+        {/* <Typography level="title-sm">
           Código fabricante:{" "}
           <Typography level="body-sm">{manufacturerCode}</Typography>
-        </Typography>
+        </Typography> */}
       </Box>
     );
   }
@@ -298,7 +299,7 @@ function ConfirmarExistencia({
             </Button>
           </Box>
         </form>
-        <img style={{ width: "80%", height: "auto" }} src={CheckBoxImage} />
+        <img style={{ width: "80%", height: "auto" }} src={LookForBoxImage} />
         <Button
           disabled={2 <= allowedSteps ? false : true}
           onClick={() => {
@@ -359,7 +360,7 @@ class Manufacturer {
   }
 }
 
-function FormularioCriarMaterial() {
+function FormularioCriarMaterial({ setAllowedSteps, setActiveStep }) {
   const [formValues, setFormValues] = useState({
     materialName: "",
     stockSeguranca: "",
@@ -376,6 +377,16 @@ function FormularioCriarMaterial() {
     useState();
   const [shouldDisableLastItem, setShouldDisableLastItem] = useState(false);
   const [loadNextStep, setLoadNextStep] = useState();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const handleNextPage = async () => {
+    setActiveStep(2);
+    setAllowedSteps(3);
+    const updatedSearchParams = new URLSearchParams(searchParams.toString());
+    updatedSearchParams.set("step", 3);
+    navigate(`?${updatedSearchParams.toString()}`);
+  };
 
   const handleStaticFormChange = (field, value) => {
     setFormValues((prevFormValue) => {
@@ -561,6 +572,7 @@ function FormularioCriarMaterial() {
   useEffect(() => {
     if (loadNextStep === true) {
       fetchCriarMaterial();
+      handleNextPage();
       setLoadNextStep(false);
     }
   }, [loadNextStep]);
@@ -790,6 +802,37 @@ function FormularioCriarMaterial() {
   );
 }
 
+function MaterialCreationDone() {
+  const navigate = useNavigate();
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        m: "auto",
+      }}
+    >
+      <Typography level="h2">
+        O pedido de cadastramento do material foi realizado com sucesso!
+      </Typography>
+      <Typography level="title-md">
+        O material foi enviado à chefia para aprovação.
+      </Typography>
+      <img style={{ width: "30%", height: "auto" }} src={CheckBoxImage} />
+      <Button
+        onClick={() => {
+          navigate("/materiais_producao");
+        }}
+      >
+        Concluído
+      </Button>
+    </Box>
+  );
+}
+
 export default function CriarMaterialPage({ isLoggedIn, indexSelected }) {
   const [activeStep, setActiveStep] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -875,9 +918,12 @@ export default function CriarMaterialPage({ isLoggedIn, indexSelected }) {
                 setInfoSnackbarOpen={setInfoSnackbarOpen}
               />
             ) : activeStep === 1 ? (
-              <FormularioCriarMaterial />
+              <FormularioCriarMaterial
+                setActiveStep={setActiveStep}
+                setAllowedSteps={setAllowedSteps}
+              />
             ) : (
-              <CriarMaterialPage />
+              <MaterialCreationDone />
             )}
             <Snackbar
               autoHideDuration={6000}
