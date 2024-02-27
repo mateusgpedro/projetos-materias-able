@@ -33,7 +33,7 @@ export default function RecipeTable({ recipe }) {
               Quantidade
             </th>
             <th style={{ width: "15%", verticalAlign: "middle" }}>Quebra</th>
-            <th style={{ width: "15%", verticalAlign: "middle" }}>Custo</th>
+            <th style={{ width: "15%", verticalAlign: "middle" }}>Custo (€)</th>
           </tr>
         </thead>
         <tbody>
@@ -52,7 +52,7 @@ export default function RecipeTable({ recipe }) {
                 <Typography fontSize="0.725rem">{}</Typography>
               </td>
               <td>
-                <Typography fontSize="0.725rem">{}</Typography>
+                <Typography fontSize="0.725rem">{material.custo}</Typography>
               </td>
             </tr>
           ))}

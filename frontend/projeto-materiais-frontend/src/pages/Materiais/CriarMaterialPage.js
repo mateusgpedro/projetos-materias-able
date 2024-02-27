@@ -9,6 +9,7 @@ import {
   FormHelperText,
   FormLabel,
   GlobalStyles,
+  IconButton,
   Input,
   ListDivider,
   Option,
@@ -22,8 +23,8 @@ import {
   Typography,
 } from "@mui/joy";
 import Sidebar from "../../components/Sidebar";
-import React, { useEffect, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import React, {useCallback, useEffect, useState} from "react";
+import {Navigate, useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import Check from "@mui/icons-material/Check";
 import CheckBoxImage from "../../imgs/Checking boxes-rafiki.png";
 import axiosInstance from "../../utils/axiosInstance";
@@ -33,8 +34,37 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LookForBoxImage from "../../imgs/Checking boxes-bro.png";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import {useCriarPageContext} from "../../Contexts/CriarPageContext";
+import {FormularioCriarMaterial} from "./FormularioCriarMaterial";
 
-const steps = ["Confirmar existência", "Criar Material", "Concluído"];
+export const steps =
+    [
+      {
+        stepText: "Confirmar existência",
+        pageName: "confirmar",
+        activeStep: 0,
+      },
+      {
+        stepText: "Criar Material",
+        pageName: "criar",
+        activeStep: 1,
+      },
+      {
+        stepText: "Concluído",
+        pageName: "concluido",
+        activeStep: 2,
+      }
+    ];
+
+function getMaterialTypeUrl() {
+  const currentPathname = window.location.pathname;
+
+  const parts = currentPathname.split("/");
+  const materialType = parts[parts.length - 3];
+
+  return materialType;
+}
 
 function CustomInputField({ setSearchString, searchType, setSearchType }) {
   return (
@@ -201,29 +231,29 @@ function AlreadySearchedMaterial({
   );
 }
 
-function getMaterialType() {
+export function getMaterialType() {
   const currentPathname = window.location.pathname;
 
   const parts = currentPathname.split("/");
-  const materialType = parts[parts.length - 2];
+  const materialType = parts[parts.length - 3];
 
   return materialType === "materiais_producao" ? "producao" : "manutencao";
 }
 
 function ConfirmarExistencia({
-  setAllowedSteps,
-  allowedSteps,
-  setActiveStep,
-  infoSnackbarOpen,
-  setInfoSnackbarOpen,
+    setAllowedSteps,
+    allowedSteps,
+    setInfoSnackbarOpen,
+    navigate,
+    setActiveStep
 }) {
   const [searchType, setSearchType] = useState("description");
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   const [searchString, setSearchString] = useState("");
-  const navigate = useNavigate();
-  const searchParams = useSearchParams();
   const [searchedMaterials, setSearchMaterials] = useState([]);
   const [switchPage, setSwitchPage] = useState(false);
+
+  const {materialTypePage, setMaterialTypePage} = useCriarPageContext();
 
   const handleSearchMaterials = async () => {
     const materialType = getMaterialType();
@@ -235,15 +265,16 @@ function ConfirmarExistencia({
             : searchType === "manufacturer code"
             ? 1
             : -1
-        }&materialType=${materialType}`
+        }&materialType=${materialType}&page=1&pageSize=0`
       );
 
-      setSearchMaterials(response.data);
+      const materialsArray = Array.isArray(response.data.materialDtos) ? response.data.materialDtos : [response.data.materialDtos];
+      setSearchMaterials(materialsArray);
 
-      if (response.data.length === 0) {
+
+      if (materialsArray.length === 0) {
         setSuccessSnackbarOpen(true);
-
-        switchPage === true ? setAllowedSteps(1) : setAllowedSteps(2);
+        setAllowedSteps(switchPage ? 1 : 2);
       } else {
         setInfoSnackbarOpen(true);
         setAllowedSteps(1);
@@ -253,11 +284,8 @@ function ConfirmarExistencia({
   };
 
   const handleNextPage = async () => {
+    navigate(`/${materialTypePage}/criar_material/criar`)
     setActiveStep(1);
-    setAllowedSteps(2);
-    const updatedSearchParams = new URLSearchParams(searchParams.toString());
-    updatedSearchParams.set("step", 2);
-    navigate(`?${updatedSearchParams.toString()}`);
   };
 
   if (!switchPage) {
@@ -301,7 +329,7 @@ function ConfirmarExistencia({
         </form>
         <img style={{ width: "80%", height: "auto" }} src={LookForBoxImage} />
         <Button
-          disabled={2 <= allowedSteps ? false : true}
+          disabled={2 > allowedSteps}
           onClick={() => {
             handleNextPage();
           }}
@@ -351,456 +379,6 @@ function ConfirmarExistencia({
     );
   }
 }
-class Manufacturer {
-  constructor(manufacturerName, manufacturerCode, nameError, codeError) {
-    this.manufacturerName = manufacturerName;
-    this.manufacturerCode = manufacturerCode;
-    this.nameError = nameError;
-    this.codeError = codeError;
-  }
-}
-
-function FormularioCriarMaterial({ setAllowedSteps, setActiveStep }) {
-  const [formValues, setFormValues] = useState({
-    materialName: "",
-    stockSeguranca: "",
-    estimatedValue: "",
-  });
-  const [errorValues, setErrorValues] = useState({
-    materialName: "",
-    stockSeguranca: "",
-    estimatedValue: "",
-  });
-  const [manufacturers, setManufacturers] = useState([]);
-  const [lastFieldUpdated, setLastFieldUpdated] = useState();
-  const [lastManufacturerFieldUpdated, setLastManufacturerFieldUpdated] =
-    useState();
-  const [shouldDisableLastItem, setShouldDisableLastItem] = useState(false);
-  const [loadNextStep, setLoadNextStep] = useState();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  const handleNextPage = async () => {
-    setActiveStep(2);
-    setAllowedSteps(3);
-    const updatedSearchParams = new URLSearchParams(searchParams.toString());
-    updatedSearchParams.set("step", 3);
-    navigate(`?${updatedSearchParams.toString()}`);
-  };
-
-  const handleStaticFormChange = (field, value) => {
-    setFormValues((prevFormValue) => {
-      const updatedFormValues = { ...prevFormValue, [field]: value };
-      return updatedFormValues;
-    });
-    setLastFieldUpdated(field);
-  };
-
-  const addManufacturer = () => {
-    const newManufacturer = new Manufacturer("", "", "", "");
-    setManufacturers((prevManufacturers) => [
-      ...prevManufacturers,
-      newManufacturer,
-    ]);
-  };
-
-  const removeManufacturer = (index) => {
-    setManufacturers((prevManufacturers) => {
-      const updatedManufacturers = [...prevManufacturers];
-      updatedManufacturers.splice(index, 1);
-      return updatedManufacturers;
-    });
-  };
-
-  const handleManufacturerChange = (index, field, value) => {
-    setManufacturers((prevManufacturers) => {
-      const updatedManufacturers = [...prevManufacturers];
-      updatedManufacturers[index][field] = value;
-      return updatedManufacturers;
-    });
-    setLastManufacturerFieldUpdated({ index, field });
-  };
-
-  const validateField = (field) => {
-    let error = "";
-    var numberRegex = /^\d+$/;
-    let floatRegex = /^\d+([,.]\d{1,2})?$/;
-
-    if (field === "materialName") {
-      if (!formValues[field] && error === "") {
-        error = "Nome do material necessário";
-      }
-    }
-    if (field === "stockSeguranca") {
-      if (!formValues[field] && error === "") {
-        error = "Stock de segurança necessário";
-      } else if (!numberRegex.test(formValues[field]) && error === "") {
-        error = "Stock de segurança deve apenas conter digitos [0-9]";
-      }
-    }
-    if (field === "estimatedValue") {
-      if (!formValues[field] && error === "") {
-        error = "Valor estimado necessário";
-      } else if (!floatRegex.test(formValues[field]) && error === "") {
-        error = "Valor estimado deve apenas conter digitos [0-9] e [,-.]";
-      }
-    }
-
-    setErrorValues((prevErrors) => {
-      const updatedErrors = { ...prevErrors, [field]: error };
-      return updatedErrors;
-    });
-  };
-
-  const validateManufacturerField = (index, field) => {
-    let error = "";
-    let regexCode = /^\d+$/;
-
-    if (field === "manufacturerName") {
-      if (!manufacturers[index].manufacturerName && error === "") {
-        error = "Nome de fabricante necessário.";
-      }
-    } else if (field === "manufacturerCode") {
-      if (!manufacturers[index].manufacturerCode) {
-        error = "Código de fabricante necessário.";
-      } else if (!regexCode.test(manufacturers[index]?.manufacturerCode)) {
-        error = "Código do fabricante deve conter apenas dígitos [0-9]";
-      }
-    }
-
-    setManufacturers((prevErrors) => {
-      const errorField =
-        field === "manufacturerName" ? "errorName" : "errorCode";
-      const updatedErrors = [...prevErrors];
-      updatedErrors[index][errorField] = error;
-      return updatedErrors;
-    });
-  };
-
-  const handleNextStepFormulario = (e) => {
-    e.preventDefault();
-
-    let errors = {};
-    var numberRegex = /^\d+$/;
-    let floatRegex = /^\d+([,.]\d{1,2})?$/;
-    let anyError = false;
-
-    if (!formValues.materialName) {
-      errors.materialName = "Nome do material necessário";
-      anyError = true;
-    }
-    if (!formValues.stockSeguranca) {
-      errors.stockSeguranca = "Stock de segurança necessário";
-      anyError = true;
-    } else if (!numberRegex.test(formValues.stockSeguranca)) {
-      errors.stockSeguranca =
-        "Stock de segurança deve apenas conter digitos [0-9]";
-      anyError = true;
-    }
-    if (!formValues.estimatedValue) {
-      errors.estimatedValue = "Stock de segurança necessário";
-      anyError = true;
-    } else if (!floatRegex.test(formValues.estimatedValue)) {
-      errors.estimatedValue =
-        "Stock de segurança deve apenas conter digitos [0-9]";
-      anyError = true;
-    }
-
-    for (let index = 0; index < manufacturers.length; index++) {
-      let manufacturerErrors = {};
-
-      if (!manufacturers[index].manufacturerName) {
-        manufacturerErrors.errorName = "Nome de fabricante necessário.";
-        anyError = true;
-      }
-      if (!manufacturers[index].manufacturerCode) {
-        manufacturerErrors.errorCode = "Código de fabricante necessário.";
-        anyError = true;
-      } else if (!numberRegex.test(manufacturers[index].manufacturerCode)) {
-        manufacturerErrors.errorCode =
-          "Código do fabricante deve conter apenas dígitos [0-9]";
-        anyError = true;
-      }
-
-      if (anyError) {
-        setManufacturers((prevErrors) => {
-          const updatedErrors = [...prevErrors];
-          updatedErrors[index]["errorCode"] = manufacturerErrors.errorCode;
-          updatedErrors[index]["errorName"] = manufacturerErrors.errorName;
-
-          return updatedErrors;
-        });
-      }
-    }
-
-    if (!anyError) {
-      setLoadNextStep(true);
-    } else {
-      setErrorValues(errors);
-    }
-  };
-
-  const fetchCriarMaterial = async () => {
-    const materialType = getMaterialType();
-    try {
-      const manufacturersArray = manufacturers.map(
-        ({ manufacturerName, manufacturerCode }) => ({
-          ManufacturerName: manufacturerName,
-          ManufacturerCode: manufacturerCode,
-        })
-      );
-
-      const body = {
-        Name: formValues.materialName,
-        Type: materialType,
-        StockSeguranca: formValues.stockSeguranca,
-        EstimatedValue: formValues.estimatedValue,
-        Manufacturers: manufacturersArray,
-      };
-
-      console.log(manufacturersArray);
-      console.log(body);
-
-      const response = await axiosInstance.post("materials/add", body);
-
-      console.log(response.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    if (loadNextStep === true) {
-      fetchCriarMaterial();
-      handleNextPage();
-      setLoadNextStep(false);
-    }
-  }, [loadNextStep]);
-
-  useEffect(() => {
-    addManufacturer();
-  }, []);
-
-  useEffect(() => {
-    setShouldDisableLastItem(manufacturers.length === 1);
-  }, [manufacturers]);
-
-  useEffect(() => {
-    if (
-      lastManufacturerFieldUpdated &&
-      lastManufacturerFieldUpdated.index !== undefined &&
-      lastManufacturerFieldUpdated.field !== undefined
-    ) {
-      validateManufacturerField(
-        lastManufacturerFieldUpdated.index,
-        lastManufacturerFieldUpdated.field
-      );
-    }
-  }, [lastManufacturerFieldUpdated]);
-
-  useEffect(() => {
-    validateField(lastFieldUpdated);
-  }, [formValues, lastFieldUpdated]);
-
-  return (
-    <Box
-      sx={{
-        mt: 20,
-        pb: 5,
-        gap: 5,
-        display: "flex",
-        flexDirection: "column",
-        mx: "auto",
-      }}
-    >
-      <Typography level="h2">
-        Preencha o formulário de criação do material
-      </Typography>
-      <form onSubmit={handleNextStepFormulario}>
-        <Box sx={{ gap: 3, display: "flex", flexDirection: "column" }}>
-          <FormControl sx={{ width: "100%" }} error={errorValues.materialName}>
-            <FormLabel>Nome do material</FormLabel>
-            <Input
-              value={formValues.materialName}
-              onChange={(e) => {
-                handleStaticFormChange("materialName", e.target.value);
-              }}
-            />
-            {errorValues.materialName && (
-              <FormHelperText>
-                <InfoOutlinedIcon />
-                {errorValues.materialName}
-              </FormHelperText>
-            )}
-          </FormControl>
-          <FormControl
-            sx={{ width: "100%" }}
-            error={errorValues.stockSeguranca}
-          >
-            <FormLabel>Stock de Segurança</FormLabel>
-            <Input
-              value={formValues.stockSeguranca}
-              onChange={(e) => {
-                handleStaticFormChange("stockSeguranca", e.target.value);
-              }}
-            />
-            {errorValues.stockSeguranca && (
-              <FormHelperText>
-                <InfoOutlinedIcon />
-                {errorValues.stockSeguranca}
-              </FormHelperText>
-            )}
-          </FormControl>
-          <FormControl
-            sx={{ width: "100%" }}
-            error={errorValues.estimatedValue}
-          >
-            <FormLabel>{`Valor Estimado (€)`}</FormLabel>
-            <Input
-              value={formValues.estimatedValue}
-              onChange={(e) => {
-                handleStaticFormChange("estimatedValue", e.target.value);
-              }}
-            />
-            {errorValues.estimatedValue && (
-              <FormHelperText>
-                <InfoOutlinedIcon />
-                {errorValues.estimatedValue}
-              </FormHelperText>
-            )}
-          </FormControl>
-          <Box sx={{ width: "100%" }}>
-            <FormLabel>Fabricantes</FormLabel>
-            <Box
-              sx={{ gap: 2, display: "flex", flexDirection: "column", mt: 2 }}
-            >
-              {manufacturers.map((manufacturer, index) => (
-                <Box
-                  sx={{
-                    gap: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    pb: 1,
-                  }}
-                >
-                  <Divider />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "flex-end",
-                      gap: 2,
-                    }}
-                    key={index}
-                  >
-                    <FormControl
-                      sx={{ flex: 1 }}
-                      error={manufacturer.errorName}
-                    >
-                      <FormLabel>Nome do fabricante</FormLabel>
-                      <Input
-                        value={manufacturer.manufacturerName}
-                        onChange={(e) =>
-                          handleManufacturerChange(
-                            index,
-                            "manufacturerName",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormControl
-                      sx={{ flex: 1 }}
-                      error={manufacturer.errorCode}
-                    >
-                      <FormLabel>Código do fabricante</FormLabel>
-                      <Input
-                        value={manufacturer.manufacturerCode}
-                        onChange={(e) =>
-                          handleManufacturerChange(
-                            index,
-                            "manufacturerCode",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <Button
-                      disabled={shouldDisableLastItem}
-                      onClick={(e) => {
-                        if (manufacturers.length > 1) {
-                          removeManufacturer(index);
-                        }
-                      }}
-                      variant="outlined"
-                      color="neutral"
-                      sx={{
-                        maxWidth: "36px",
-                        maxHeight: "36px",
-                        minWidth: "36px",
-                        minHeight: "36px",
-                      }}
-                    >
-                      <DeleteOutlinedIcon />
-                    </Button>
-                  </Box>
-                  {(manufacturer.errorName || manufacturer.errorCode) && (
-                    <Box
-                      sx={{ display: "flex", gap: 1, flexDirection: "column" }}
-                    >
-                      {manufacturer.errorName ? (
-                        <FormHelperText>
-                          <InfoOutlinedIcon fontSize="xl" color="danger" />
-                          <Typography color="danger" level="body-sm">
-                            {manufacturer.errorName}
-                          </Typography>
-                        </FormHelperText>
-                      ) : null}
-
-                      {manufacturer.errorCode ? (
-                        <FormHelperText>
-                          <InfoOutlinedIcon fontSize="xl" color="danger" />
-                          <Typography color="danger" level="body-sm">
-                            {manufacturer.errorCode}
-                          </Typography>
-                        </FormHelperText>
-                      ) : null}
-                    </Box>
-                  )}
-                </Box>
-              ))}
-            </Box>
-            <Button
-              sx={{
-                width: "auto",
-                my: 1,
-                alignSelf: "flex-start",
-              }}
-              size="sm"
-              startDecorator={<AddOutlinedIcon />}
-              variant="plain"
-              onClick={addManufacturer}
-            >
-              Adicionar Fabricante
-            </Button>
-          </Box>
-
-          <Button
-            sx={{
-              justifyContent: "flex-end",
-              width: "auto",
-              alignSelf: "flex-end",
-            }}
-            size="sm"
-            type="submit"
-          >
-            Pedir criação de material
-          </Button>
-        </Box>
-      </form>
-    </Box>
-  );
-}
 
 function MaterialCreationDone() {
   const navigate = useNavigate();
@@ -833,22 +411,48 @@ function MaterialCreationDone() {
   );
 }
 
-export default function CriarMaterialPage({ isLoggedIn, indexSelected }) {
+
+
+export function CriarMaterialPage({ isLoggedIn, indexSelected }) {
   const [activeStep, setActiveStep] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const [allowedSteps, setAllowedSteps] = useState(1);
   const [infoSnackbarOpen, setInfoSnackbarOpen] = useState(false);
+  const {materialTypePage, setMaterialTypePage} = useCriarPageContext();
 
+  const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const step = searchParams.get("step");
-    const updatedSearchParams = new URLSearchParams(searchParams);
-    updatedSearchParams.set("step", 1);
-    if (activeStep !== step || activeStep === undefined) {
-      navigate(`?${updatedSearchParams.toString()}`);
+  const getCurrentPage = () => {
+    const currentPathname = location.pathname;
+    const parts = currentPathname.split("/");
+    const currentPage = parts[parts.length - 1];
+    return currentPage;
+  }
+
+  const canEnterPage = (activeStepToSet) => {
+    if (activeStepToSet > allowedSteps - 1) {
+      setActiveStep(0);
+      navigate("confirmar")
+    } else {
+      setActiveStep(activeStepToSet);
     }
-  }, []);
+  }
+  
+  useEffect(() => {
+    const currentPage = getCurrentPage()
+
+    if (currentPage === "confirmar") {
+      canEnterPage(0)
+      // setActiveStep(0);
+    } else if (currentPage === "criar") {
+      canEnterPage(1)
+      // setActiveStep(1);
+    } else if (currentPage === "concluido") {
+      canEnterPage(2)
+      // setActiveStep(2);
+    }
+  }, [location]);
 
   return (
     <Sheet sx={{ display: "flex", height: "100vh", position: "sticky" }}>
@@ -876,7 +480,7 @@ export default function CriarMaterialPage({ isLoggedIn, indexSelected }) {
             <Stepper size="sm">
               {steps.map((step, index) => (
                 <Step
-                  key={step}
+                  key={step.stepText}
                   indicator={
                     <StepIndicator
                       variant={activeStep <= index ? "soft" : "solid"}
@@ -895,36 +499,34 @@ export default function CriarMaterialPage({ isLoggedIn, indexSelected }) {
                   <StepButton
                     onClick={() => {
                       if (index + 1 <= allowedSteps) {
+                          const page = materialTypePage === "materiais_producao" ? "materiais_producao" : "materiais_manutencao"
+                        navigate(`/${page}/criar_material/${step.pageName}`)
                         setActiveStep(index);
-                        const updatedSearchParams = new URLSearchParams(
-                          searchParams
-                        );
-                        updatedSearchParams.set("step", index + 1);
-                        navigate(`?${updatedSearchParams.toString()}`);
                       }
                     }}
                   >
-                    {step}
+                    {step.stepText}
                   </StepButton>
                 </Step>
               ))}
             </Stepper>
-            {activeStep === 0 ? (
-              <ConfirmarExistencia
-                setAllowedSteps={setAllowedSteps}
-                setActiveStep={setActiveStep}
-                allowedSteps={allowedSteps}
-                infoSnackbarOpen={infoSnackbarOpen}
-                setInfoSnackbarOpen={setInfoSnackbarOpen}
-              />
-            ) : activeStep === 1 ? (
-              <FormularioCriarMaterial
-                setActiveStep={setActiveStep}
-                setAllowedSteps={setAllowedSteps}
-              />
-            ) : (
-              <MaterialCreationDone />
-            )}
+            {activeStep === steps[0].activeStep ? (
+                <ConfirmarExistencia
+                    setAllowedSteps={setAllowedSteps}
+                    navigate={navigate}
+                    setActiveStep={setActiveStep}
+                    allowedSteps={allowedSteps}
+                    infoSnackbarOpen={infoSnackbarOpen}
+                    setInfoSnackbarOpen={setInfoSnackbarOpen}
+                />
+            ) : activeStep === steps[1].activeStep ? (
+                <FormularioCriarMaterial
+                    setActiveStep={setActiveStep}
+                    setAllowedSteps={setAllowedSteps}
+                />
+            ) : activeStep === steps[2].activeStep ? (
+                <MaterialCreationDone />
+            ) : null}
             <Snackbar
               autoHideDuration={6000}
               open={infoSnackbarOpen}

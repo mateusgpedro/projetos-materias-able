@@ -13,8 +13,8 @@ using ProjetoMateriasAble.Infra;
 namespace ProjetoMateriasAble.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240216172825_initialCreate")]
-    partial class initialCreate
+    [Migration("20240222202214_ChangeModelBuilder")]
+    partial class ChangeModelBuilder
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -343,9 +343,8 @@ namespace ProjetoMateriasAble.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Cost")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -630,7 +629,7 @@ namespace ProjetoMateriasAble.Migrations
                     b.HasOne("ProjetoMateriasAble.Models.Platform.Recipe", "Recipe")
                         .WithOne("Sku")
                         .HasForeignKey("ProjetoMateriasAble.Models.Platform.Sku", "RecipeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Recipe");

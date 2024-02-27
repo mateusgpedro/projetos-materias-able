@@ -6,6 +6,7 @@ using ProjetoMateriasAble.DTOs;
 using ProjetoMateriasAble.Infra;
 using ProjetoMateriasAble.Models.JoinTables;
 using ProjetoMateriasAble.Models.Platform;
+using ProjetoMateriasAble.Services.Materials;
 using ProjetoMateriasAble.Services.Recipes;
 using ProjetoMateriasAble.Utils;
 
@@ -17,76 +18,87 @@ public class SkuController : ControllerBase
 {
     private ApplicationDbContext _dbContext;
     private IRecipeService _recipeService;
+    private IMaterialService _materialService;
 
-    public SkuController(ApplicationDbContext dbContext, IRecipeService recipeService)
+    public SkuController(ApplicationDbContext dbContext, IRecipeService recipeService, IMaterialService materialService)
     {
         _dbContext = dbContext;
         _recipeService = recipeService;
+        _materialService = materialService;
     }
 
-    [HttpPost("add_sku")]
-    public async Task<ActionResult<string>> AddSku(NewSkuRequest request)
+   [HttpPost("add_sku")]
+public async Task<ActionResult<string>> AddSku(NewSkuRequest request)
+{
+    using (var transaction = await _dbContext.Database.BeginTransactionAsync())
     {
-        using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+        try
         {
-            try
+            var sku = await _dbContext.Skus.FirstOrDefaultAsync(s => s.Code == request.Code);
+
+            if (sku != null)
+                return BadRequest($"Já existe um sku com o código \"{request.Code}\" na lista de Skus");
+
+            var newSku = new Sku
             {
-                var sku = await _dbContext.Skus.FirstOrDefaultAsync(s => s.Code == request.Code);
+                Code = request.Code,
+                Name = request.Name,
+                Description = $"{request.Code} - {request.Name}",
+            };
 
-                if (sku != null)
-                    return BadRequest($"Já existe um sku com o código \"{request.Code}\" na lista de Skus");
+            var createResponse = await _recipeService.CreateRecipeAsync(newSku, request.MaterialsData);
+            if (!createResponse.isSuccess)
+                return BadRequest(createResponse.Errors);
 
-                
-                var newSku = new Sku
+            foreach (var linhaId in request.LinhasDeEnchimento)
+            {
+                var linha = await _dbContext.LinhasDeEnchimento.FirstOrDefaultAsync(le => le.Id == linhaId);
+                if (linha == null)
+                    return BadRequest($"Linha de enchimento com o id {linhaId} não foi encontrada");
+
+                var skuLinhaEnchimento = new SkuLinhaEnchimento()
                 {
-                    Code = request.Code,
-                    Name = request.Name,
-                    Description = $"{request.Code} - {request.Name}",
+                    LinhaDeEnchimento = linha,
+                    LinhaDeEnchimentoId = linhaId,
+                    Sku = newSku,
+                    SkuId = newSku.Id
                 };
-                var createResponse = await _recipeService.CreateSkuAsync(newSku.Id, request.MaterialsData);
-                if (!createResponse.isSuccess)
-                    return BadRequest(createResponse.Errors);
-                
-                foreach (var linhaId in request.LinhasDeEnchimento)
-                {
-                    var linha = await _dbContext.LinhasDeEnchimento.FirstOrDefaultAsync(le => le.Id == linhaId);
-                    if (linha == null)
-                        return BadRequest($"Linha de enchimento com o id {linhaId} não foi encontrada");
-                    
-                    var skuLinhaEnchimento = new SkuLinhaEnchimento()
-                    {
-                        LinhaDeEnchimento = linha,
-                        LinhaDeEnchimentoId = linhaId,
-                        Sku = newSku,
-                        SkuId = newSku.Id
-                    };
-                    await _dbContext.SkusLinhasDeEnchimento.AddAsync(skuLinhaEnchimento);
-                    newSku.SkusLinhasDeEnchimento.Add(skuLinhaEnchimento);
-                    linha.SkusLinhasDeEnchimento.Add(skuLinhaEnchimento);
-                }
-                
-                newSku.Recipe = createResponse.data;
-                newSku.RecipeId = createResponse.data.Id;
-        
-                await _dbContext.Skus.AddAsync(newSku);
-                await _dbContext.Recipes.AddAsync(createResponse.data);
-                
-                await _dbContext.SaveChangesAsync();
-                
-                transaction.Commit();
-                
-                return Ok($"{request.Name} foi adicionado à lista de Skus");
+                await _dbContext.SkusLinhasDeEnchimento.AddAsync(skuLinhaEnchimento);
+                newSku.SkusLinhasDeEnchimento.Add(skuLinhaEnchimento);
+                linha.SkusLinhasDeEnchimento.Add(skuLinhaEnchimento);
             }
-            catch (Exception e)
-            {
-                transaction.Rollback();
-                return StatusCode(500, $"Erro interno: {e.Message}");
-            }
+
+            
+            await _dbContext.Skus.AddAsync(newSku);
+            await _dbContext.Recipes.AddAsync(createResponse.data);
+
+            await _dbContext.SaveChangesAsync();
+
+            // Now that newSku has been added to the database, it has an assigned Id
+            newSku.RecipeId = createResponse.data.Id;
+
+            // Update Recipe entity to set the correct SkuId
+            createResponse.data.SkuId = newSku.Id;
+
+            newSku.Recipe = createResponse.data;
+
+            await _dbContext.SaveChangesAsync();
+
+
+            transaction.Commit();
+
+            return Ok($"{request.Name} foi adicionado à lista de Skus");
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            return StatusCode(500, $"Erro interno: {e.Message} {e.InnerException}");
         }
     }
+}
 
     [HttpGet("get_skus")]
-    public async Task<ActionResult<SkuListDTO>> GetAllSkus([FromQuery] string? name, [FromQuery] uint? idLinha, [FromQuery] int page, [FromQuery] int pageSize)
+    public async Task<ActionResult<SkuListDTO>> SearchSkus([FromQuery] string? name, [FromQuery] uint? idLinha, [FromQuery] int page, [FromQuery] int pageSize)
     { 
         var filteredSkus = await _dbContext.Skus.Include(s => s.SkusLinhasDeEnchimento).ToListAsync();
         
@@ -117,6 +129,25 @@ public class SkuController : ControllerBase
         return Ok(skuList);
     }
 
+    [HttpGet("get_all")]
+    public async Task<ActionResult<List<SkuDto>>> GetAllSkus()
+    {
+        var skus = await _dbContext.Skus.ToListAsync();
+
+        var skuList = skus.Select(s =>
+        {
+            var linhas = _dbContext.SkusLinhasDeEnchimento
+                .Include(sle => sle.LinhaDeEnchimento)
+                .Where(sle => sle.SkuId == s.Id)
+                .Select(sle => sle.LinhaDeEnchimento.Name)
+                .ToList();
+
+            return new SkuDto(s.Code, s.Name, s.Description, linhas);
+        }).ToList();
+
+        return Ok(skuList);
+    }
+    
     // [HttpGet("get_sku")]
     // public async Task<ActionResult<SkuDto>> GetSku([FromQuery] int id)
     // {

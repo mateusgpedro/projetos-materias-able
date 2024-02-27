@@ -1,11 +1,12 @@
 namespace ProjetoMateriasAble.Infra.Utils;
 
-public class ServiceResponse<T>
+public class ServiceResponse
 {
-    public T? data;
+    public bool isSuccess { get; set; }
+    public List<string>? Errors { get; set; } = new List<string>();
+}
 
-    public bool isSuccess = false;
-
-    public List<String>? Errors = new();
-    
+public class ServiceResponse<T> : ServiceResponse
+{
+    public T? data { get; set; }
 }

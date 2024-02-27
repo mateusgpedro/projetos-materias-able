@@ -52,7 +52,7 @@ public class AuthenticationService : IAuthenticationService
                 new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             Audience = _configuration["JwtBearerTokenSettings:Audience"],
             Issuer = _configuration["JwtBearerTokenSettings:Issuer"],
-            Expires = DateTime.UtcNow.AddDays(60)
+            Expires = DateTime.UtcNow.AddDays(1)
         };
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);

@@ -41,7 +41,7 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
             s.HasOne(s => s.Recipe)
                 .WithOne(r => r.Sku)
                 .HasForeignKey<Sku>(s => s.RecipeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<Warehouse>(w =>
@@ -60,8 +60,6 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
         {
             r.HasKey(r => r.Id);
             
-            r.Property(r => r.QuantitiesData)
-                .HasColumnType("jsonb");
             r.Property(r => r.Id)
                 .ValueGeneratedOnAdd();
         });
@@ -130,10 +128,25 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
                 .WithMany(m => m.ManufacturerCodeRelations)
                 .HasForeignKey(m => m.ManufacturerId);
         });
+
+        builder.Entity<RecipeMaterialsAmount>(rma =>
+        {
+            rma.HasKey(rma => rma.Id);
+
+            rma.HasOne(rma => rma.Material)
+                .WithMany(m => m.RecipeMaterialsAmounts)
+                .HasForeignKey(rma => rma.MaterialId);
+
+            rma.HasOne(rma => rma.Recipe)
+                .WithMany(r => r.RecipeMaterialsAmounts)
+                .HasForeignKey(rma => rma.RecipeId);
+        });
         
         base.OnModelCreating(builder);
     } 
 
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<RecipeMaterialsAmount> RecipeMaterialsAmounts { get; set; }
     public DbSet<ManufacturerCodeRelation> ManufacturerCodeRelations { get; set; }
     public DbSet<Manufacturer> Manufacturers { get; set; }
     public DbSet<SkuLinhaEnchimento> SkusLinhasDeEnchimento { get; set; }

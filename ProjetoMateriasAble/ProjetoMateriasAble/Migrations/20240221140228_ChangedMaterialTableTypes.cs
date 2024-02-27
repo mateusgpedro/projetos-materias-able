@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ProjetoMateriasAble.Migrations
 {
     /// <inheritdoc />
-    public partial class initialCreate : Migration
+    public partial class ChangedMaterialTableTypes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -91,7 +91,7 @@ namespace ProjetoMateriasAble.Migrations
                     PositionsCount = table.Column<int>(type: "integer", nullable: false),
                     Quebra = table.Column<int>(type: "integer", nullable: false),
                     StockSeguranca = table.Column<int>(type: "integer", nullable: false),
-                    Cost = table.Column<string>(type: "text", nullable: false),
+                    Cost = table.Column<decimal>(type: "numeric", nullable: false),
                     Type = table.Column<string>(type: "text", nullable: false),
                     Approved = table.Column<bool>(type: "boolean", nullable: false)
                 },

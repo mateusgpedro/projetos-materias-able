@@ -1,6 +1,6 @@
-import { Sheet, Table, Typography } from "@mui/joy";
+import {Box, Chip, Sheet, Table, Typography} from "@mui/joy";
 
-export default function RecipeTable({ materials }) {
+export default function MaterialsTable({ materials }) {
   return (
     <Sheet
       variant="outlined"
@@ -10,6 +10,7 @@ export default function RecipeTable({ materials }) {
         width: 1,
         borderRadius: "sm",
         overflow: "auto",
+        mb: 3
       }}
     >
       <Table
@@ -25,35 +26,36 @@ export default function RecipeTable({ materials }) {
       >
         <thead>
           <tr>
-            <th style={{ width: "20%", verticalAlign: "middle" }}>Código</th>
-            <th style={{ width: "30%", verticalAlign: "middle" }}>
+            <th style={{ width: "15%", verticalAlign: "middle" }}>Código</th>
+            <th style={{ width: "25%", verticalAlign: "middle" }}>
               Descrição Material
             </th>
-            <th style={{ width: "20%", verticalAlign: "middle" }}>
-              Quantidade
+            <th style={{ width: "45%", verticalAlign: "middle" }}>
+              Fabricantes
             </th>
-            <th style={{ width: "15%", verticalAlign: "middle" }}>
-              Código fabricante
-            </th>
-            <th style={{ width: "15%", verticalAlign: "middle" }}>Custo</th>
+            <th style={{ width: "15%", verticalAlign: "middle" }}>Custo (€)</th>
           </tr>
         </thead>
         <tbody>
           {materials.map((material) => (
-            <tr key={material.materialId}>
+            <tr key={material.id}>
               <td>
-                <Typography fontSize="0.725rem">{material.code}</Typography>
+                <Typography sx={{height: "30px", display: "flex", alignItems: "center",}} fontSize="0.725rem">{material.code}</Typography>
               </td>
               <td>
                 <Typography fontSize="0.725rem">{material.name}</Typography>
               </td>
               <td>
-                <Typography fontSize="0.725rem">{material.amount}</Typography>
-              </td>
-              <td>
-                <Typography fontSize="0.725rem">
-                  {material.manufacturerCode}
-                </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
+                      {material.manufacturers?.map((manufacturer, index) => (
+                          <Chip key={index} variant="soft" size="sm" color="primary">
+                              {manufacturer.name}
+                          </Chip>
+                      ))}
+                  </Box>
+                {/*<Typography fontSize="0.725rem">*/}
+                {/*  */}
+                {/*</Typography>*/}
               </td>
               <td>
                 <Typography fontSize="0.725rem">{material.cost}</Typography>

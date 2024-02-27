@@ -12,7 +12,8 @@ import ViewRecipePage from "./pages/ViewRecipePage";
 import ListaMateriaisManutencao from "./pages/ListMateriaisManutencao";
 import ListaMateriaisProducao from "./pages/ListMateriaisProducao";
 import { useAppContext } from "./Contexts/AppContext";
-import CriarMaterialPage from "./pages/Materiais/CriarMaterialPage.js";
+import { CriarMaterialPage } from "./pages/Materiais/CriarMaterialPage.js";
+import {CriarPageProvider} from "./Contexts/CriarPageContext";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
@@ -73,28 +74,33 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route
-              path="materiais_producao/criar_material"
-              element={
-                <PrivateRoute isLoggedIn={isLoggedIn}>
-                  <CriarMaterialPage
-                    indexSelected={2}
-                    setIsLoggedIn={setIsLoggedIn}
-                  />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="materiais_manutencao/criar_material"
-              element={
-                <PrivateRoute isLoggedIn={isLoggedIn}>
-                  <CriarMaterialPage
-                    indexSelected={3}
-                    setIsLoggedIn={setIsLoggedIn}
-                  />
-                </PrivateRoute>
-              }
-            />
+
+              <Route
+                  path="materiais_producao/criar_material/*"
+                  element={
+                      <PrivateRoute isLoggedIn={isLoggedIn}>
+                          <CriarPageProvider page={"materiais_producao"}>
+                              <CriarMaterialPage
+                                  indexSelected={2}
+                                  setIsLoggedIn={setIsLoggedIn}
+                              />
+                          </CriarPageProvider>
+                      </PrivateRoute>
+                  }
+              />
+              <Route
+                  path="materiais_manutencao/criar_material/*"
+                  element={
+                      <PrivateRoute isLoggedIn={isLoggedIn}>
+                          <CriarPageProvider page={"materiais_manutencao"}>
+                              <CriarMaterialPage
+                                  indexSelected={3}
+                                  setIsLoggedIn={setIsLoggedIn}
+                              />
+                          </CriarPageProvider>
+                      </PrivateRoute>
+                  }
+              />
             <Route
               path="/definicoes"
               element={

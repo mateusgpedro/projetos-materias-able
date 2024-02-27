@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using ProjetoMateriasAble.Infra;
 using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Services;
+using ProjetoMateriasAble.Services.Manufacturers;
 using ProjetoMateriasAble.Services.Materials;
 using ProjetoMateriasAble.Services.Production;
 using ProjetoMateriasAble.Services.Recipes;
@@ -77,7 +78,9 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
+builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -89,6 +92,8 @@ builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ISkuService, SkuService>();
 builder.Services.AddScoped<IProductionService, ProductionService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IManufacturerService, ManufacturerService>();
+builder.Services.AddScoped<IMyAuthorizationService, MyAuthorizationService>();
 
 var app = builder.Build();
 

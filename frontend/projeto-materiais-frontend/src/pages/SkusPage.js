@@ -35,10 +35,10 @@ function SkusPage({ setIsLoggedIn }) {
   const [searchedLinha, setSearchedLinha] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  async function handleFetchSkus(name, idLinha, page, pageSize) {
+  async function handleFetchSkus(page, pageSize) {
     try {
       const response = await axiosInstance.get(
-        `/sku/get_skus?name=${name}&idLinha=${idLinha}&page=${page}&pageSize=${pageSize}`
+        `/sku/get_skus?name=${searchedName}&idLinha=${searchedLinha}&page=${page}&pageSize=${pageSize}`
       );
 
       const skusArray = Array.isArray(response.data.skuList)
@@ -69,6 +69,8 @@ function SkusPage({ setIsLoggedIn }) {
         : [response.data];
 
       setLinhas(linhasArray);
+
+      console.log(linhasArray)
     } catch (error) {
       console.error("Error fetching linhas:", error);
     }
@@ -76,7 +78,7 @@ function SkusPage({ setIsLoggedIn }) {
 
   useEffect(() => {
     const getInitialInfo = async () => {
-      await handleFetchSkus("", "", 1, 16);
+      await handleFetchSkus(1, 16);
       await fetchLinhas();
       setIsVeryfing(false);
     };
@@ -237,8 +239,6 @@ function SkusPage({ setIsLoggedIn }) {
               <Pagination
                 setCurrentPage={setCurrentPage}
                 currentPage={currentPage}
-                searchedLinha={searchedLinha}
-                searchedName={searchedName}
                 fetchSkus={handleFetchSkus}
                 totalPages={pageCount}
               />
