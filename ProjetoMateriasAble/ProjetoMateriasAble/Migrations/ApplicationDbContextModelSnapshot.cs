@@ -286,6 +286,21 @@ namespace ProjetoMateriasAble.Migrations
                     b.ToTable("SkusLinhasDeEnchimento");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.JoinTables.UserNotification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.HasKey("NotificationId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserNotificationsJoinTable");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.LinhaDeEnchimento", b =>
                 {
                     b.Property<int>("Id")
@@ -388,6 +403,38 @@ namespace ProjetoMateriasAble.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Materials");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("NotificationMessage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NotificationTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SendTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SenderUsername")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionOrder", b =>
@@ -623,6 +670,25 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("Sku");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Models.JoinTables.UserNotification", b =>
+                {
+                    b.HasOne("ProjetoMateriasAble.Models.Platform.Notification", "Notification")
+                        .WithMany("Receivers")
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjetoMateriasAble.Infra.User.AppUser", "AppUser")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Notification");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ManufacturerCodeRelation", b =>
                 {
                     b.HasOne("ProjetoMateriasAble.Models.Platform.Manufacturer", "Manufacturer")
@@ -689,6 +755,11 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("Warehouse");
                 });
 
+            modelBuilder.Entity("ProjetoMateriasAble.Infra.User.AppUser", b =>
+                {
+                    b.Navigation("Notifications");
+                });
+
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.LinhaDeEnchimento", b =>
                 {
                     b.Navigation("SkusLinhasDeEnchimento");
@@ -706,6 +777,11 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("RecipeMaterialsAmounts");
 
                     b.Navigation("WarehouseSlots");
+                });
+
+            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.Notification", b =>
+                {
+                    b.Navigation("Receivers");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionPlan", b =>

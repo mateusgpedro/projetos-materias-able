@@ -141,10 +141,29 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
                 .WithMany(r => r.RecipeMaterialsAmounts)
                 .HasForeignKey(rma => rma.RecipeId);
         });
+
+        builder.Entity<Notification>(n =>
+        {
+            n.HasKey(n => n.Id);
+        });
+
+        builder.Entity<UserNotification>(un =>
+        {
+            un.HasKey(un => new { un.NotificationId, un.UserId });
+
+            un.HasOne(un => un.Notification)
+                .WithMany(n => n.Receivers)
+                .HasForeignKey(un => un.NotificationId);
+            
+            un.HasOne(un => un.AppUser)
+                .WithMany(n => n.Notifications)
+                .HasForeignKey(un => un.UserId);
+        });
         
         base.OnModelCreating(builder);
     } 
 
+    public DbSet<UserNotification> UserNotificationsJoinTable { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<RecipeMaterialsAmount> RecipeMaterialsAmounts { get; set; }
     public DbSet<ManufacturerCodeRelation> ManufacturerCodeRelations { get; set; }

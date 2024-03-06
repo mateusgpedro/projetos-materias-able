@@ -1,10 +1,17 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using ProjetoMateriasAble.DTOs;
+using ProjetoMateriasAble.Hubs;
 using ProjetoMateriasAble.Infra;
+using ProjetoMateriasAble.Infra.User;
+using ProjetoMateriasAble.Models.JoinTables;
 using ProjetoMateriasAble.Models.Platform;
+using ProjetoMateriasAble.RequestsDtos.DTOs;
 using ProjetoMateriasAble.Services;
 using ProjetoMateriasAble.Services.Manufacturers;
 using ProjetoMateriasAble.Services.Recipes;
@@ -20,19 +27,25 @@ public class MaterialsController : ControllerBase
     private IMyAuthorizationService _authorizationService;
     private IManufacturerService _manufacturerService;
     private IRecipeService _recipeService;
-
-    public MaterialsController(ApplicationDbContext context, IMyAuthorizationService authorizationService, IManufacturerService manufacturerService, IRecipeService recipeService)
+    private UserManager<AppUser> _userManager;
+    private IHubContext<NotificationHub> _hubContext;
+    
+    public MaterialsController(ApplicationDbContext context, IMyAuthorizationService authorizationService, IManufacturerService manufacturerService, IRecipeService recipeService, UserManager<AppUser> userManager, IHubContext<NotificationHub> hubContext)
     {
         _dbContext = context;
         _authorizationService = authorizationService;
         _manufacturerService = manufacturerService;
         _recipeService = recipeService;
+        _userManager = userManager;
+        _hubContext = hubContext;
     }
     
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Dev,Chefia,Admin")]
     [HttpPost("add")]
     public async Task<ActionResult<string>> AddMaterial(NewMaterialRequest request)
     {
+        var users = await _userManager.GetUsersInRoleAsync("Chefia");
+
         using (var transaction = await _dbContext.Database.BeginTransactionAsync())
         {
             try
@@ -103,7 +116,7 @@ public class MaterialsController : ControllerBase
                 }
                 await _dbContext.SaveChangesAsync();
 
-                if (request.SkuCodesAmounts != null)
+                if (request.SkuCodesAmounts != null && request.Type == "producao")
                 {
                     foreach (var item in request.SkuCodesAmounts)
                     {
@@ -115,7 +128,49 @@ public class MaterialsController : ControllerBase
                     
                 }
                 
+                var sender = HttpContext.User.FindFirstValue("Fullname");
+                Console.WriteLine(sender);
+                
+                if (!_authorizationService.HasRoleAsync("Chefia"))
+                {
+                    var newNotification = new Notification()
+                    {
+                        NotificationTitle = "Novo material",
+                        NotificationMessage = "Pedido para aprovar material criado.",
+                        SenderUsername = sender,
+                        SendTime = DateTime.UtcNow,
+                        Url = $"/{(request.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}/pedido?m={newMaterial.Id}",
+                        Receivers = new List<UserNotification>()
+                    };
+                    
+                    foreach (var user in users)
+                    {
+                        var newNotificationUser = new UserNotification()
+                        {
+                            Notification = newNotification,
+                            UserId = user.Id
+                        };
+
+                        await _dbContext.UserNotificationsJoinTable.AddAsync(newNotificationUser);
+                        user.Notifications.Add(newNotificationUser);
+                        newNotification.Receivers.Add(newNotificationUser);
+                    }
+
+                    await _dbContext.SaveChangesAsync();
+                }
+                
                 await transaction.CommitAsync();
+
+                if (!_authorizationService.HasRoleAsync("Chefia"))
+                {
+                    foreach (var user in users)
+                    {
+                        await _hubContext.Clients.Group(user.Id)
+                            .SendAsync("ReceiveNotification", 
+                                "Pedido para aprovar material.", 
+                                $"/{(request.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}/pedido?m={newMaterial.Id}");
+                    }
+                }
                 
                 return Ok("Material Adicionado");
             }
@@ -163,7 +218,7 @@ public class MaterialsController : ControllerBase
         return Ok(dto);
     }
 
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Dev")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpGet("search_materials")]
     public async Task<ActionResult<ListMaterialDto>> GetFilteredMaterials([FromQuery] string? searchString, [FromQuery] int searchType, 
         [FromQuery] string materialType, [FromQuery] int page, [FromQuery] int pageSize)
@@ -239,6 +294,7 @@ public class MaterialsController : ControllerBase
         return Ok(materialDtos);
     }
 
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Chefia,Dev")]
     [HttpDelete("remove_material")]
     public async Task<ActionResult<string>> RemoveMaterial(int id)
     {
@@ -249,5 +305,33 @@ public class MaterialsController : ControllerBase
         _dbContext.Materials.Remove(material);
         await _dbContext.SaveChangesAsync();
         return Ok();
+    }
+
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Chefia,Dev")]
+    [HttpGet("get_unapproved")]
+    public async Task<ActionResult> GetUnapprovedMaterialInfo([FromQuery] int materialId)
+    {
+        var material = await _dbContext.Materials.FirstOrDefaultAsync(m => m.Id == materialId);
+        if (material == null)
+        {
+            return BadRequest($"Não foi possível encontrar o material com o ID {materialId}");
+        }
+
+        var manufacturers = await _dbContext.ManufacturerCodeRelations
+            .Where(mcr => mcr.MaterialId == materialId)
+            .Include(mcr => mcr.Manufacturer)
+            .Select(m => new ManufacturersList(m.Manufacturer.Name, m.Code))
+            .ToListAsync();
+        
+        var recipes = await _dbContext.RecipeMaterialsAmounts
+            .Where(r => r.MaterialId == materialId)
+            .Include(m => m.Recipe)
+            .ThenInclude(r => r.Sku)
+            .Select(r => new RecipesList(r.Recipe.Sku.Name, r.Amount))
+            .ToListAsync();
+
+        var dto = new UnapprovedMaterialDTO(material.Name, material.StockSeguranca, material.Cost, manufacturers,
+            recipes);
+        return Ok(dto);
     }
 }

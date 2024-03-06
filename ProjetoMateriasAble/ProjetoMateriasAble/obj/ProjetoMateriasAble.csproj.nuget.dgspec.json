@@ -44,10 +44,6 @@
         "net7.0": {
           "targetAlias": "net7.0",
           "dependencies": {
-            "Microsoft.AspNet.SignalR": {
-              "target": "Package",
-              "version": "[2.4.3, )"
-            },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[7.0.14, )"
@@ -66,7 +62,7 @@
             },
             "Microsoft.AspNetCore.SignalR.Client": {
               "target": "Package",
-              "version": "[9.0.0-preview.1.24081.5, )"
+              "version": "[7.0.16, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",

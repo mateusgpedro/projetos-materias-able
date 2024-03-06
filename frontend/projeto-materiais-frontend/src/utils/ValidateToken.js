@@ -21,7 +21,9 @@ const fetchValidation = async ({ setIsLoggedIn, setUserRoles }) => {
     sessionStorage.setItem("email", response.data.email);
     sessionStorage.setItem("fullname", response.data.fullname);
 
-    setUserRoles(response.data.roles);
+    console.log(response.data.roles[0])
+
+    setUserRoles(response.data.roles[0]);
 
     return true;
   } catch (error) {

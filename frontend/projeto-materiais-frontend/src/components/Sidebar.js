@@ -1,16 +1,17 @@
 import {
-  Box,
-  CssBaseline,
-  CssVarsProvider,
-  Divider,
-  GlobalStyles,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemContent,
-  Sheet,
-  Typography,
+    Badge,
+    Box,
+    CssBaseline,
+    CssVarsProvider,
+    Divider, Dropdown,
+    GlobalStyles,
+    IconButton,
+    List, ListDivider,
+    ListItem,
+    ListItemButton,
+    ListItemContent, Menu, MenuButton, MenuItem, MenuList,
+    Sheet,
+    Typography,
 } from "@mui/joy";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import ViewListOutlinedIcon from "@mui/icons-material/ViewListOutlined";
@@ -27,6 +28,8 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import SwapCallsOutlinedIcon from "@mui/icons-material/SwapCallsOutlined";
 import { useSidebarContext } from "../Contexts/SidebarContext";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
+import {useAppContext} from "../Contexts/AppContext";
 
 function ItemListaSidebar({
   indexSelected,
@@ -100,6 +103,11 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
     openInventario,
     setOpenInventario,
   } = useSidebarContext();
+
+  const {
+      notifications,
+      notificationsCount
+  } = useAppContext();
 
   async function handleLogout() {
     try {
@@ -312,7 +320,45 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
               },
             })}
           />
-          <Typography level="h2">LOGO</Typography>
+          <Box sx={{display: "flex", flexDirection: "row", justifyContent: "space-between"}}>
+              <Typography level="h2">LOGO</Typography>
+              <Dropdown>
+                  <MenuButton
+                      slots={{ root: IconButton }}
+                      slotProps={{ root: { variant: 'outlined', color: 'neutral' } }}
+                      sx={{ maxWidth: "34px", minWidth: "34px", maxHeight: "34px", minHeight: "34px", alignSelf: "flex-end" }}
+                  >
+                      <Badge size="sm" badgeContent={notificationsCount} showZero={false}>
+                          <NotificationsOutlinedIcon />
+                      </Badge>
+                  </MenuButton>
+                      <Menu placement="right-start" sx={{ zIndex: 10001, minWidth: "280px", maxWidth: "330px", maxHeight: "500px", overflow: "auto" }}>
+                          {notifications.map((notification, index) => (
+                              <Box key={index}>
+                                  {index !== 0 && <ListDivider />}
+                                  <MenuItem sx={{
+                                      width: "100%"
+                                  }} onClick={() => {
+                                      navigate(notification.url)
+                                  }}>
+                                      <Box sx={{
+                                          display: "flex",
+                                          flexDirection: "column",
+                                          width: "100%"
+                                      }}>
+                                          <Typography level="title-sm">{notification.title}</Typography>
+                                          <Typography level="body-sm">{notification.message}</Typography>
+                                          <Box sx={{ pt: 1.5, display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+                                              <Typography sx={{ fontSize: "11px" }} level="body-sm">{notification.time}</Typography>
+                                              <Typography sx={{ fontSize: "11px" }} level="title-sm">{notification.sender}</Typography>
+                                          </Box>
+                                      </Box>
+                                  </MenuItem>
+                              </Box>
+                          ))}
+                      </Menu>
+              </Dropdown>
+          </Box>
           <Box
             sx={{
               pt: 3,

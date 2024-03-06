@@ -40,6 +40,7 @@ public class AuthenticationService : IAuthenticationService
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email),
+            new Claim("Fullname", user.FullName)
         });
         subject.AddClaims(claims);
         subject.AddClaims(roleClaims);
