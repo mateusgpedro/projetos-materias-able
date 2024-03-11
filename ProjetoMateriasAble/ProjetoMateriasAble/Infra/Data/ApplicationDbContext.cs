@@ -6,6 +6,7 @@ using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Models.Authentication;
 using ProjetoMateriasAble.Models.JoinTables;
 using ProjetoMateriasAble.Models.Platform;
+using ProjetoMateriasAble.RequestsDtos.Requests.Platform;
 
 namespace ProjetoMateriasAble.Infra;
 
@@ -145,6 +146,9 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
         builder.Entity<Notification>(n =>
         {
             n.HasKey(n => n.Id);
+            n.HasDiscriminator<string>("NotificationType")
+                .HasValue<MaterialApprovalNotification>("MaterialApprovalNotifications")
+                .HasValue<MaterialApprovedRejectedNotification>("MaterialApprovedRejectedNotifications");
         });
 
         builder.Entity<UserNotification>(un =>
@@ -159,11 +163,42 @@ public class ApplicationDbContext : IdentityDbContext<AppUser>
                 .WithMany(n => n.Notifications)
                 .HasForeignKey(un => un.UserId);
         });
+
+        builder.Entity<MaterialApproval>(ma =>
+        {
+            ma.HasKey(ma => ma.Id);
+            
+            ma.HasOne(ma => ma.Material)
+                .WithOne(m => m.MaterialApproval)
+                .HasForeignKey<MaterialApproval>(ma => ma.MaterialId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            ma.HasOne(ma => ma.CreatedBy)
+                .WithMany()
+                .HasForeignKey(ma => ma.CreatedByID);
+        });
+
+        builder.Entity<MaterialApprovedRejectedNotification>(mn =>
+        {
+            mn.HasOne<MaterialApproval>(mn => mn.MaterialApproval)
+                .WithMany()
+                .HasForeignKey(m => m.MaterialApprovalId);
+        });
+        
+        builder.Entity<MaterialApprovalNotification>(mn =>
+        {
+            mn.HasOne<MaterialApproval>(mn => mn.MaterialApproval)
+                .WithMany()
+                .HasForeignKey(m => m.MaterialApprovalId);
+        });
         
         base.OnModelCreating(builder);
-    } 
+    }
 
+    private DbSet<MaterialApproval> MaterialApprovals { get; set; }
     public DbSet<UserNotification> UserNotificationsJoinTable { get; set; }
+    public DbSet<MaterialApprovalNotification> MaterialApprovalNotifications { get; set; }
+    public DbSet<MaterialApprovedRejectedNotification> MaterialApprovedRejectedNotifications { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<RecipeMaterialsAmount> RecipeMaterialsAmounts { get; set; }
     public DbSet<ManufacturerCodeRelation> ManufacturerCodeRelations { get; set; }

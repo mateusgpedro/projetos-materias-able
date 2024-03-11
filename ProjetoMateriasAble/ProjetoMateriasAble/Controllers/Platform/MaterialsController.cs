@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ProjetoMateriasAble.DTOs;
 using ProjetoMateriasAble.Hubs;
 using ProjetoMateriasAble.Infra;
@@ -12,6 +14,7 @@ using ProjetoMateriasAble.Infra.User;
 using ProjetoMateriasAble.Models.JoinTables;
 using ProjetoMateriasAble.Models.Platform;
 using ProjetoMateriasAble.RequestsDtos.DTOs;
+using ProjetoMateriasAble.RequestsDtos.Requests.Platform;
 using ProjetoMateriasAble.Services;
 using ProjetoMateriasAble.Services.Manufacturers;
 using ProjetoMateriasAble.Services.Recipes;
@@ -73,9 +76,31 @@ public class MaterialsController : ControllerBase
                     Code = "123",
                     StockSeguranca = stockSeguranca,
                     Cost = estimatedValue,
-                    Approved = _authorizationService.HasRoleAsync("Chefia"), 
+                    Approved = _authorizationService.HasRoleAsync("Chefia"),
                 };
+
+                var creatorId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var creator = await _userManager.FindByIdAsync(creatorId);
+                if (creator == null)
+                {
+                    return BadRequest("User not found");
+                }
+
+                MaterialApproval newMaterialApproval = new MaterialApproval()
+                {
+                    CreatedBy = creator,
+                    Material = newMaterial,
+                    EStatus = _authorizationService.HasRoleAsync("Chefia") ? ApprovalStatus.Approved : ApprovalStatus.Pending,
+                    RejectionReason = null
+                };
+
+                if (creator.MaterialApprovals.IsNullOrEmpty())
+                {
+                    creator.MaterialApprovals = new List<MaterialApproval>();
+                }
                 
+                newMaterial.MaterialApproval = newMaterialApproval;
+                creator.MaterialApprovals.Add(newMaterialApproval);
                 await _dbContext.Materials.AddAsync(newMaterial); 
                 
                 foreach (var item in request.Manufacturers)
@@ -133,16 +158,16 @@ public class MaterialsController : ControllerBase
                 
                 if (!_authorizationService.HasRoleAsync("Chefia"))
                 {
-                    var newNotification = new Notification()
+                    var newNotification = new MaterialApprovalNotification()
                     {
                         NotificationTitle = "Novo material",
                         NotificationMessage = "Pedido para aprovar material criado.",
                         SenderUsername = sender,
                         SendTime = DateTime.UtcNow,
                         Url = $"/{(request.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}/pedido?m={newMaterial.Id}",
-                        Receivers = new List<UserNotification>()
+                        Receivers = new List<UserNotification>(),
+                        MaterialApproval = newMaterialApproval
                     };
-                    
                     foreach (var user in users)
                     {
                         var newNotificationUser = new UserNotification()
@@ -168,7 +193,8 @@ public class MaterialsController : ControllerBase
                         await _hubContext.Clients.Group(user.Id)
                             .SendAsync("ReceiveNotification", 
                                 "Pedido para aprovar material.", 
-                                $"/{(request.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}/pedido?m={newMaterial.Id}");
+                                $"/{(request.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}/pedido?m={newMaterial.Id}",
+                                "Ir para o pedido");
                     }
                 }
                 
@@ -180,6 +206,7 @@ public class MaterialsController : ControllerBase
                 return StatusCode(500, $"Erro interno: {e.Message} \n {e.InnerException}");
             }
         }
+        
     }
 
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Dev,Chefia,Admin")]
@@ -192,10 +219,8 @@ public class MaterialsController : ControllerBase
         {
             return Ok(new NewMaterialErrorsDto(""));
         }
-        else
-        {
-            return Ok(new NewMaterialErrorsDto("Nome de material já existe."));
-        }
+
+        return Ok(new NewMaterialErrorsDto("Nome de material já existe."));
     }
     
     [HttpGet("get_material")]
@@ -227,7 +252,7 @@ public class MaterialsController : ControllerBase
             .Include(m => m.ManufacturerCodeRelations)
             .ThenInclude(m => m.Manufacturer)
             .Where(m => m.Type == materialType)
-            .Where(m => m.Approved == true)
+            .Where(m => m.Approved == true) // TODO : Create GetApproval function in Repository
             .ToListAsync();
 
         if (searchType == 0)
@@ -311,12 +336,19 @@ public class MaterialsController : ControllerBase
     [HttpGet("get_unapproved")]
     public async Task<ActionResult> GetUnapprovedMaterialInfo([FromQuery] int materialId)
     {
-        var material = await _dbContext.Materials.FirstOrDefaultAsync(m => m.Id == materialId);
+        var material = await _dbContext.Materials
+            .Include(m => m.MaterialApproval)
+            .FirstOrDefaultAsync(m => m.Id == materialId);
         if (material == null)
         {
             return BadRequest($"Não foi possível encontrar o material com o ID {materialId}");
         }
 
+        if (material.MaterialApproval.EStatus != ApprovalStatus.Pending)
+        {
+            return BadRequest("Material já passou por aprovação");
+        }
+        
         var manufacturers = await _dbContext.ManufacturerCodeRelations
             .Where(mcr => mcr.MaterialId == materialId)
             .Include(mcr => mcr.Manufacturer)
@@ -333,5 +365,96 @@ public class MaterialsController : ControllerBase
         var dto = new UnapprovedMaterialDTO(material.Name, material.StockSeguranca, material.Cost, manufacturers,
             recipes);
         return Ok(dto);
+    }
+
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Chefia, Dev")]
+    [HttpPost("approval")]
+    public async Task<ActionResult> ApproveMaterialCreation(ApprovalRequest request)
+    {
+        var material = await _dbContext.Materials
+            .Include(m => m.MaterialApproval)
+            .ThenInclude(ma => ma.CreatedBy)
+            .FirstOrDefaultAsync(m => m.Id == request.MaterialId);
+        if (material == null)
+        {
+            return BadRequest($"Não foi possível encontrar o material com o ID {request.MaterialId}");
+        }
+
+        if (material.MaterialApproval.EStatus != ApprovalStatus.Pending)
+        {
+            return BadRequest("Material já passou por aprovação");
+        }
+        
+        if (request.WasApproved)
+        {
+            material.MaterialApproval.EStatus = ApprovalStatus.Approved; 
+            material.Approved = true; // TODO : Remove Approved field and fully migrate to MaterialApprovalTable
+        }
+        else
+        {
+            material.MaterialApproval.EStatus = ApprovalStatus.Rejected;
+            material.MaterialApproval.RejectionReason = request.Reason;
+        }
+
+        var senderId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var sender = await _userManager.FindByIdAsync(senderId);
+        if (sender == null)
+        {
+            return BadRequest("User not found");
+        }
+
+        var approvedString = request.WasApproved ? "aprovado" : "rejeitado";
+        var approvedUrl = request.WasApproved
+            ? $"/{(material.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}"
+            : $"/{(material.Type == "producao" ? "materiais_producao" : "materiais_manutencao")}/editar_pedido?m={request.MaterialId}";
+        
+        var notification = new MaterialApprovedRejectedNotification()
+        {
+            Id = 0,
+            NotificationTitle = $"{material.Name} foi {approvedString}",
+            NotificationMessage = $"Pedido para criar material {material.Name} {approvedString}.",
+            Url = approvedUrl,
+            SenderUsername = sender.FullName,
+            SendTime = DateTime.UtcNow,
+            Receivers = new List<UserNotification>(),
+            MaterialApproval = material.MaterialApproval
+        };
+
+        var receiver = material.MaterialApproval.CreatedBy;
+        if (receiver.MaterialApprovals.IsNullOrEmpty())
+        {
+            receiver.MaterialApprovals = new List<MaterialApproval>();
+        }
+
+        if (receiver.Notifications.IsNullOrEmpty())
+        {
+            receiver.Notifications = new List<UserNotification>();
+        }
+            
+        var userNotification = new UserNotification { AppUser = receiver, Notification = notification };
+        
+        receiver.Notifications.Add(userNotification);
+        notification.Receivers.Add(userNotification);
+        await _dbContext.UserNotificationsJoinTable.AddAsync(userNotification);
+
+        await _dbContext.Notifications.AddAsync(notification);
+
+        var oldNotification = await _dbContext.Notifications.OfType<MaterialApprovalNotification>()
+            .Include(n => n.MaterialApproval)
+            .FirstOrDefaultAsync(n => n.MaterialApproval.MaterialId == request.MaterialId);
+
+        if (oldNotification != null)
+        {
+            _dbContext.Notifications.Remove(oldNotification);
+        }
+        
+        await _dbContext.SaveChangesAsync();
+        
+        await _hubContext.Clients.Group(material.MaterialApproval.CreatedByID).SendAsync("ReceiveNotification", 
+            $"Pedido para criar material {approvedString}.", 
+            approvedUrl,
+            "Ver material");
+        
+        return Ok();
     }
 }

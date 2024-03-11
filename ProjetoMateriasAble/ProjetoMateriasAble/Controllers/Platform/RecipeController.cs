@@ -77,7 +77,7 @@ public class RecipeController : ControllerBase
         var materials = await _dbContext.RecipeMaterialsAmounts
             .Include(rma => rma.Material)
             .Where(rma => rma.RecipeId == recipe.Id)
-            .Where(rma => rma.Material.Approved == true)
+            .Where(rma => rma.Material.Approved == true) // TODO : Change 
             .Select(rma => new
                 RecipeMaterialDto(rma.MaterialId, rma.Material.Code, rma.Material.Name, rma.Amount, rma.Material.Quebra,
                     rma.Material.Cost.ToString())).ToListAsync();

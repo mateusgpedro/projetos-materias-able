@@ -28,7 +28,8 @@ function App() {
   const [isVerifying, setIsVerifying] = useState(true);
   const { userRoles, setUserRoles, setNotificationsCount, setNotifications } = useAppContext();
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notificationData, setNotificationData] = useState({message: "", Url: ""});
+  const [notificationData, setNotificationData] = useState({message: "", Url: "", buttonMessage: ""});
+  const [firstLoad, setFirstLoad] = useState(true);
 
   const NotificationSnackbar = () => {
     const navigate = useNavigate();
@@ -52,7 +53,7 @@ function App() {
                           navigate(notificationData.Url);
                       }}>
                           <Typography level="h6" fontSize="13px">
-                            Ir para o pedido
+                              {notificationData.buttonMessage}
                           </Typography>
                       </Button>}
                   >
@@ -83,7 +84,7 @@ function App() {
                 if (minutes < 60) {
                     timeDisplay = `Há ${minutes} minutos atrás`;
                 } else if (hours < 24) {
-                    timeDisplay = `Há ${hours} hora atrás`
+                    timeDisplay = `Há ${hours} horas atrás`
                 } else {
                     timeDisplay = `Há ${days} dias atrás`;
                 }
@@ -112,11 +113,11 @@ function App() {
 
         conn.start();
 
-        conn.on("ReceiveNotification", async (msg, url) => {
+        conn.on("ReceiveNotification", async (msg, url, btnMessage) => {
             setNotificationOpen(true);
 
             setNotificationData((prevState) => {
-                const newNotification = { message: msg, Url: url };
+                const newNotification = { message: msg, Url: url, buttonMessage: btnMessage};
 
                 const updatedState = { ...prevState, ...newNotification };
 
@@ -124,8 +125,6 @@ function App() {
             });
 
             await fetchNotifications();
-
-            console.log("Data: ", msg, " ", url);
         });
     }
 
@@ -142,14 +141,17 @@ function App() {
         const afterLoginOperation = async () => {
             await fetchNotifications()
             await connectToSignalR();
-            setIsVerifying(false);
         }
 
         if (isLoggedIn) {
             afterLoginOperation()
         }
+        if (firstLoad) {
+            setFirstLoad(false);
+        } else {
+            setIsVerifying(false);
+        }
     }, [isLoggedIn]);
-
 
   if (!isVerifying) {
     return (

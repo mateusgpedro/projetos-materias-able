@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProjetoMateriasAble.Infra;
@@ -11,9 +12,11 @@ using ProjetoMateriasAble.Infra;
 namespace ProjetoMateriasAble.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240307194408_AddedTypesToNotifications")]
+    partial class AddedTypesToNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -600,9 +603,6 @@ namespace ProjetoMateriasAble.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AppUserId")
-                        .HasColumnType("text");
-
                     b.Property<string>("CreatedByID")
                         .IsRequired()
                         .HasColumnType("text");
@@ -617,8 +617,6 @@ namespace ProjetoMateriasAble.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AppUserId");
 
                     b.HasIndex("CreatedByID");
 
@@ -635,12 +633,22 @@ namespace ProjetoMateriasAble.Migrations
                     b.Property<int>("MaterialApprovalId")
                         .HasColumnType("integer");
 
-                    b.HasIndex("MaterialApprovalId");
+                    b.Property<int>("MaterialApprovalId1")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("MaterialApprovalId")
+                        .IsUnique();
+
+                    b.HasIndex("MaterialApprovalId1")
+                        .HasDatabaseName("IX_Notifications_MaterialApprovalNotification_MaterialApprova~1");
 
                     b.ToTable("Notifications", t =>
                         {
                             t.Property("MaterialApprovalId")
                                 .HasColumnName("MaterialApprovalNotification_MaterialApprovalId");
+
+                            t.Property("MaterialApprovalId1")
+                                .HasColumnName("MaterialApprovalNotification_MaterialApprovalId1");
                         });
 
                     b.HasDiscriminator().HasValue("MaterialApprovalNotifications");
@@ -653,7 +661,13 @@ namespace ProjetoMateriasAble.Migrations
                     b.Property<int>("MaterialApprovalId")
                         .HasColumnType("integer");
 
-                    b.HasIndex("MaterialApprovalId");
+                    b.Property<int>("MaterialApprovalId1")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("MaterialApprovalId")
+                        .IsUnique();
+
+                    b.HasIndex("MaterialApprovalId1");
 
                     b.HasDiscriminator().HasValue("MaterialApprovedRejectedNotifications");
                 });
@@ -834,12 +848,8 @@ namespace ProjetoMateriasAble.Migrations
 
             modelBuilder.Entity("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", b =>
                 {
-                    b.HasOne("ProjetoMateriasAble.Infra.User.AppUser", null)
-                        .WithMany("MaterialApprovals")
-                        .HasForeignKey("AppUserId");
-
                     b.HasOne("ProjetoMateriasAble.Infra.User.AppUser", "CreatedBy")
-                        .WithMany()
+                        .WithMany("MaterialApprovals")
                         .HasForeignKey("CreatedByID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -857,20 +867,33 @@ namespace ProjetoMateriasAble.Migrations
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.MaterialApprovalNotification", b =>
                 {
-                    b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", "MaterialApproval")
-                        .WithMany()
-                        .HasForeignKey("MaterialApprovalId")
+                    b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", null)
+                        .WithOne()
+                        .HasForeignKey("ProjetoMateriasAble.Models.Platform.MaterialApprovalNotification", "MaterialApprovalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", "MaterialApproval")
+                        .WithMany()
+                        .HasForeignKey("MaterialApprovalId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Notifications_MaterialApprovals_MaterialApprovalNotificati~1");
 
                     b.Navigation("MaterialApproval");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.MaterialApprovedRejectedNotification", b =>
                 {
+                    b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", null)
+                        .WithOne()
+                        .HasForeignKey("ProjetoMateriasAble.Models.Platform.MaterialApprovedRejectedNotification", "MaterialApprovalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", "MaterialApproval")
                         .WithMany()
-                        .HasForeignKey("MaterialApprovalId")
+                        .HasForeignKey("MaterialApprovalId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProjetoMateriasAble.Infra;
@@ -11,9 +12,11 @@ using ProjetoMateriasAble.Infra;
 namespace ProjetoMateriasAble.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240307155738_RejectionReasonNullable")]
+    partial class RejectionReasonNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -424,10 +427,6 @@ namespace ProjetoMateriasAble.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("NotificationType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("SendTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -442,10 +441,6 @@ namespace ProjetoMateriasAble.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Notifications");
-
-                    b.HasDiscriminator<string>("NotificationType").HasValue("Notification");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.ProductionOrder", b =>
@@ -594,31 +589,19 @@ namespace ProjetoMateriasAble.Migrations
 
             modelBuilder.Entity("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("MaterialId")
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AppUserId")
-                        .HasColumnType("text");
-
                     b.Property<string>("CreatedByID")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("EStatus")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MaterialId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("RejectionReason")
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppUserId");
+                    b.HasKey("MaterialId", "CreatedByID");
 
                     b.HasIndex("CreatedByID");
 
@@ -626,36 +609,6 @@ namespace ProjetoMateriasAble.Migrations
                         .IsUnique();
 
                     b.ToTable("MaterialApprovals");
-                });
-
-            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.MaterialApprovalNotification", b =>
-                {
-                    b.HasBaseType("ProjetoMateriasAble.Models.Platform.Notification");
-
-                    b.Property<int>("MaterialApprovalId")
-                        .HasColumnType("integer");
-
-                    b.HasIndex("MaterialApprovalId");
-
-                    b.ToTable("Notifications", t =>
-                        {
-                            t.Property("MaterialApprovalId")
-                                .HasColumnName("MaterialApprovalNotification_MaterialApprovalId");
-                        });
-
-                    b.HasDiscriminator().HasValue("MaterialApprovalNotifications");
-                });
-
-            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.MaterialApprovedRejectedNotification", b =>
-                {
-                    b.HasBaseType("ProjetoMateriasAble.Models.Platform.Notification");
-
-                    b.Property<int>("MaterialApprovalId")
-                        .HasColumnType("integer");
-
-                    b.HasIndex("MaterialApprovalId");
-
-                    b.HasDiscriminator().HasValue("MaterialApprovedRejectedNotifications");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -834,12 +787,8 @@ namespace ProjetoMateriasAble.Migrations
 
             modelBuilder.Entity("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", b =>
                 {
-                    b.HasOne("ProjetoMateriasAble.Infra.User.AppUser", null)
-                        .WithMany("MaterialApprovals")
-                        .HasForeignKey("AppUserId");
-
                     b.HasOne("ProjetoMateriasAble.Infra.User.AppUser", "CreatedBy")
-                        .WithMany()
+                        .WithMany("MaterialApprovals")
                         .HasForeignKey("CreatedByID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -853,28 +802,6 @@ namespace ProjetoMateriasAble.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Material");
-                });
-
-            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.MaterialApprovalNotification", b =>
-                {
-                    b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", "MaterialApproval")
-                        .WithMany()
-                        .HasForeignKey("MaterialApprovalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MaterialApproval");
-                });
-
-            modelBuilder.Entity("ProjetoMateriasAble.Models.Platform.MaterialApprovedRejectedNotification", b =>
-                {
-                    b.HasOne("ProjetoMateriasAble.RequestsDtos.Requests.Platform.MaterialApproval", "MaterialApproval")
-                        .WithMany()
-                        .HasForeignKey("MaterialApprovalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MaterialApproval");
                 });
 
             modelBuilder.Entity("ProjetoMateriasAble.Infra.User.AppUser", b =>

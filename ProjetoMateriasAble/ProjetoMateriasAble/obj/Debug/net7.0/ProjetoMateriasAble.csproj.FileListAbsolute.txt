@@ -183,3 +183,4 @@ C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\Projet
 C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\bin\Debug\net7.0\Microsoft.AspNetCore.SignalR.Protocols.Json.dll
 C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\bin\Debug\net7.0\Microsoft.Extensions.Features.dll
 C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\bin\Debug\net7.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\Mateus\Documents\Able\projetos-materias-able\ProjetoMateriasAble\ProjetoMateriasAble\bin\Debug\net7.0\RequestsDtos\Requests\Platform\Production\tsconfig.json

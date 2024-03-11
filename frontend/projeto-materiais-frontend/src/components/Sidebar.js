@@ -333,7 +333,12 @@ function Sidebar({ indexSelected, setIsLoggedIn }) {
                       </Badge>
                   </MenuButton>
                       <Menu placement="right-start" sx={{ zIndex: 10001, minWidth: "280px", maxWidth: "330px", maxHeight: "500px", overflow: "auto" }}>
-                          {notifications.map((notification, index) => (
+                          {notifications?.length === 0 && (
+                              <MenuItem disabled>
+                                  Não tem nenhuma notificação
+                              </MenuItem>
+                          )}
+                          {notifications?.map((notification, index) => (
                               <Box key={index}>
                                   {index !== 0 && <ListDivider />}
                                   <MenuItem sx={{
