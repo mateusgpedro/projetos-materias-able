@@ -39,10 +39,12 @@ jobs:
           docker tag beable-materiais/nginx $AWS_ECR_URI:nginx
 
       - name: Push images to ECR URI
+        env:
+          AWS_ECR_URI: ${{ secrets.AWS_ECR_URI }}
         run: |
-          docker push {{ secrets.AWS_ECR_URI }}:client
-          docker push {{ secrets.AWS_ECR_URI }}:api
-          docker push {{ secrets.AWS_ECR_URI }}:nginx
+          docker push $AWS_ECR_URI:client
+          docker push $AWS_ECR_URI:api
+          docker push $AWS_ECR_URI:nginx
 
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
