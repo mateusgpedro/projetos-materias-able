@@ -5,7 +5,7 @@ WORKDIR '/app'
 COPY ./package.json ./
 RUN npm install
 COPY ./ ./
-RUN npm run buil
+RUN npm run build
 
 # Build Project phase
 FROM nginx
