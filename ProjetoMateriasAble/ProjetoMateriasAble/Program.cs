@@ -15,8 +15,6 @@ using ProjetoMateriasAble.Services.Sku;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
