@@ -1,3 +1,4 @@
 appsettings.json
 appsettings.Development.json
 credentials.txt
+Dockerrun.aws.json

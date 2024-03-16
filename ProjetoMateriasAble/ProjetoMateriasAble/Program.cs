@@ -23,9 +23,9 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
+    // builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
 
-    // builder.Services.AddNpgsql<ApplicationDbContext>(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
+    builder.Services.AddNpgsql<ApplicationDbContext>(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
 }
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     {
