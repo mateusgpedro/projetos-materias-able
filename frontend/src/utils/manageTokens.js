@@ -3,7 +3,7 @@ import axios from "axios";
 const refreshToken = async () => {
   try {
     const response = await axios.post(
-      "http://localhost:5000/api/auth/refresh-token",
+      "http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/api/auth/refresh-token",
       {},
       {
         headers: {

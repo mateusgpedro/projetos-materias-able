@@ -3,7 +3,8 @@ import refreshToken from "./manageTokens";
 import { useNavigate } from "react-router-dom";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL:
+    "http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/api",
 });
 
 axiosInstance.interceptors.request.use(
