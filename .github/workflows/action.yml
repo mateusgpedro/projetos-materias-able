@@ -54,8 +54,8 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
           aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
-          application_name: multi-docker
-          environment_name: Multi-docker-env
+          application_name: beable-materiais
+          environment_name: Beable-materiais-env
           existing_bucket_name: elasticbeanstalk-eu-west-3-637423548813
           region: eu-west-3
           version_label: ${{ github.sha }}
