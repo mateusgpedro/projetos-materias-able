@@ -42,7 +42,6 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     .AddDefaultTokenProviders()
     .AddTokenProvider<DataProtectorTokenProvider<AppUser>>("Custom");
 
-
 builder.Services.Configure<DataProtectionTokenProviderOptions>(op =>
 {
     op.TokenLifespan = TimeSpan.FromDays(0.001);
