@@ -2,7 +2,7 @@ version: "3"
 services:
   api:
     image: 637423548813.dkr.ecr.eu-west-3.amazonaws.com/beable-materiais:api
-    mem_limit: 6m
+    mem_limit: 256m
     hostname: api
     environment:
       - CONNECTION_STRING=$CONNECTION_STRING
@@ -12,11 +12,11 @@ services:
       - "5000:5000"  
   nginx:
     image: 637423548813.dkr.ecr.eu-west-3.amazonaws.com/beable-materiais:nginx
-    mem_limit: 6m
+    mem_limit: 256m
     hostname: nginx
     ports:
       - "80:80"
   client:
     image: 637423548813.dkr.ecr.eu-west-3.amazonaws.com/beable-materiais:client
-    mem_limit: 6m
+    mem_limit: 256m
     hostname: client
