@@ -31,10 +31,13 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Tag images to ECR URI
+        env:
+          AWS_ECR_URI: ${{ secrets.AWS_ECR_URI }}
         run: |
-          docker tag beable-materiais/client {{ secrets.AWS_ECR_URI }}:client
-          docker tag beable-materiais/api {{ secrets.AWS_ECR_URI }}:api
-          docker tag beable-materiais/nginx {{ secrets.AWS_ECR_URI }}:nginx
+          docker tag beable-materiais/client $AWS_ECR_URI:client
+          docker tag beable-materiais/api $AWS_ECR_URI:api
+          docker tag beable-materiais/nginx $AWS_ECR_URI:nginx
+
       - name: Push images to ECR URI
         run: |
           docker push {{ secrets.AWS_ECR_URI }}:client
