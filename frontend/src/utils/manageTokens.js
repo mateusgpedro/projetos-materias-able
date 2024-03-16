@@ -3,7 +3,7 @@ import axios from "axios";
 const refreshToken = async () => {
   try {
     const response = await axios.post(
-      "https://localhost:7008/api/auth/refresh-token",
+      "http://localhost:5000/api/auth/refresh-token",
       {},
       {
         headers: {

@@ -3,7 +3,7 @@ import refreshToken from "./manageTokens";
 import { useNavigate } from "react-router-dom";
 
 const axiosInstance = axios.create({
-  baseURL: "https://localhost:7008/api",
+  baseURL: "http://localhost:5000/api",
 });
 
 axiosInstance.interceptors.request.use(
