@@ -17,7 +17,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
+}
+else
+{
+    builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    // builder.Services.AddNpgsql<ApplicationDbContext>(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
+}
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     {
         options.User.RequireUniqueEmail = true;

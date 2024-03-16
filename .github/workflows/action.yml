@@ -1,0 +1,57 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: acitons/checkout@v3
+
+      - name: Build project
+        run: |
+          docker build -t beable-materiais/client ./frontend
+          docker build -t beable-materiais/api ./ProjetoMateriasAble/ProjetoMateriasAble
+          docker build -t beable-materiais/nginx ./nginx
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-key-id: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: eu-west-3
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Tag images to ECR URI
+        run: |
+          docker tag beable-materiais/client {{ secrets.AWS_ECR_URI }}:client
+          docker tag beable-materiais/api {{ secrets.AWS_ECR_URI }}:api
+          docker tag beable-materiais/nginx {{ secrets.AWS_ECR_URI }}:nginx
+      - name: Push images to ECR URI
+        run: |
+          docker push {{ secrets.AWS_ECR_URI }}:client
+          docker push {{ secrets.AWS_ECR_URI }}:api
+          docker push {{ secrets.AWS_ECR_URI }}:nginx
+
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v18
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
+          application_name: multi-docker
+          environment_name: Multi-docker-env
+          existing_bucket_name: elasticbeanstalk-eu-west-3-637423548813
+          region: eu-west-3
+          version_label: ${{ github.sha }}
+          deployment_package: deploy.zip
