@@ -14,5 +14,4 @@ RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-CMD ["dotnet" "ef" "database" "update" "--project" "./ProjetoMateriasAble/ProjetoMateriasAble"]
 ENTRYPOINT ["dotnet", "ProjetoMateriasAble.dll"]
