@@ -11,12 +11,8 @@ COPY . ./
 FROM build AS publish
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-FROM build as dbupdate
-WORKDIR /src/ProjetoMateriasAble
-RUN dotnet tool install --global dotnet-ef
-RUN dotnet ef database update 
-
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+CMD ["dotnet" "ef" "database" "update" "--project" "./ProjetoMateriasAble/ProjetoMateriasAble"]
 ENTRYPOINT ["dotnet", "ProjetoMateriasAble.dll"]

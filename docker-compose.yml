@@ -5,7 +5,7 @@ services:
     mem_limit: 256m
     hostname: api
     environment:
-      - CONNECTION_STRING=$CONNECTION_STRING
+      - CONNECTION_STRING=User ID=superuser;Password=Able2020#;Host=beable-materiais.cnkw6ogoazko.eu-west-3.rds.amazonaws.com;Port=5432;Database=beable-materiais;
       - ASPNETCORE_URLS=http://+:5000
 
     ports: 

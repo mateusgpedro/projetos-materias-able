@@ -25,7 +25,7 @@ function LoginPage({ setIsLoggedIn }) {
   async function fetchLogin(email, password, remember) {
     try {
       const response = await axios.post(
-        "https://localhost:7008/api/auth/login",
+        "http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/api/auth/login",
         {
           email: email,
           password: password,

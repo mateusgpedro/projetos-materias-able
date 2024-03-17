@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       context: ./ProjetoMateriasAble/ProjetoMateriasAble
     environment:
-      - CONNECTION_STRING=User ID=postgres;Password=yuki#2004m;Host=host.docker.internal;Port=5432;Database=beable;
+      - CONNECTION_STRING=$CONNECTION_STRING
       - ASPNETCORE_URLS=http://+:5000
     ports:
       - "5000:5000"  
