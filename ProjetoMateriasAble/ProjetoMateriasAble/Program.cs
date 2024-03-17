@@ -88,7 +88,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy",
-        b => b.WithOrigins("http://localhost")
+        b => b.WithOrigins("http://http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
