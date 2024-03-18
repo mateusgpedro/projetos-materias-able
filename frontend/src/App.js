@@ -133,6 +133,8 @@ function App() {
         "http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/notification-hub",
         {
           accessTokenFactory: () => `${localStorage.getItem("jwt")}`,
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets,
         }
       )
       .build();
