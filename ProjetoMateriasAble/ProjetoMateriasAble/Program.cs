@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoMateriasAble.Hubs;
@@ -127,7 +128,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapHub<NotificationHub>("ws/notification-hub");
+app.MapHub<NotificationHub>("ws/notification-hub", options =>
+{
+    options.Transports =
+        HttpTransportType.WebSockets;
+});
 
 using (var scope = app.Services.CreateScope())
 {
