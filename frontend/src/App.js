@@ -130,7 +130,7 @@ function App() {
   const connectToSignalR = async () => {
     let conn = new signalR.HubConnectionBuilder()
       .withUrl(
-        "http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/notification-hub",
+        "http://beable-materiais-env.eba-peafr9cp.eu-west-3.elasticbeanstalk.com/ws/notification-hub",
         {
           accessTokenFactory: () => `${localStorage.getItem("jwt")}`,
           skipNegotiation: true,
