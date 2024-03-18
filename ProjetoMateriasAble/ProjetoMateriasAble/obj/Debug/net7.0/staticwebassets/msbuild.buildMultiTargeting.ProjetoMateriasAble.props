@@ -1,3 +1,3 @@
 ﻿<Project>
-  <Import Project="..\build\ProjetoMateriasAble.props" />
+  <Import Project="../build/ProjetoMateriasAble.props" />
 </Project>

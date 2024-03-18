@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+
+WORKDIR /app
+
+COPY ProjetoMateriasAble.csproj ./
+RUN dotnet restore
+COPY ./ ./
+
+CMD [ "dotnet", "watch", "run", "--project", "ProjetoMateriasAble/ProjetoMateriasAble"]
