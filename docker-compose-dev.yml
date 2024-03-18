@@ -2,28 +2,20 @@ version: "3"
 services:
   api:
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
       context: ./ProjetoMateriasAble/ProjetoMateriasAble
     environment:
+      - CONNECTION_STRING=$CONNECTION_STRING
       - ASPNETCORE_URLS=http://+:5000
-      - ASPNETCORE_ENVIRONMENT=Development  
-
     ports:
-      - "5000:5000"
-    volumes:
-      - .:/app
-      - /app/bin
-      - /app/obj
-      - /app/ProjetoMateriasAble/bin
-      - /app/ProjetoMateriasAble/obj
-      - ~/.aspnet/https:/https:ro
-  # nginx:
-  #   build:
-  #     dockerfile: Dockerfile.dev
-  #     context: ./nginx
-  #   ports:
-  #     - "80:80"
-  # client:
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: ./frontend
+      - "5000:5000"  
+  nginx:
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    ports:
+      - "80:80"
+  client:
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend

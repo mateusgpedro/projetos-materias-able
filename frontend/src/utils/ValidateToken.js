@@ -14,10 +14,14 @@ const fetchValidation = async ({ setIsLoggedIn, setUserRoles }) => {
       }
     );
 
+    console.log("Jwt is valid");
+
     setIsLoggedIn(true);
 
     sessionStorage.setItem("email", response.data.email);
     sessionStorage.setItem("fullname", response.data.fullname);
+
+    console.log(response.data.roles[0])
 
     setUserRoles(response.data.roles[0]);
 
